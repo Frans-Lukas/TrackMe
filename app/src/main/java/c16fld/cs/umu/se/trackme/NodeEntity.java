@@ -14,23 +14,33 @@ public class NodeEntity {
     private int id;
 
     @ColumnInfo(name = "latitude")
-    private String latitude;
+    private double latitude;
 
     @ColumnInfo(name = "longitude")
-    private String longitude;
+    private double longitude;
 
     @ColumnInfo(name = "prev_node_id")
     private int prevID;
+
+    public NodeEntity(int id, double latitude, double longitude, int prevID) {
+        this.id = id;
+        this.latitude = latitude;
+        this.longitude = longitude;
+        this.prevID = prevID;
+    }
+
+    public NodeEntity() {
+    }
 
     public int getId() {
         return id;
     }
 
-    public String getLatitude() {
+    public double getLatitude() {
         return latitude;
     }
 
-    public String getLongitude() {
+    public double getLongitude() {
         return longitude;
     }
 
@@ -42,11 +52,11 @@ public class NodeEntity {
         this.id = id;
     }
 
-    public void setLatitude(String latitude) {
+    public void setLatitude(double latitude) {
         this.latitude = latitude;
     }
 
-    public void setLongitude(String longitude) {
+    public void setLongitude(double longitude) {
         this.longitude = longitude;
     }
 
