@@ -1,16 +1,11 @@
 package c16fld.cs.umu.se.trackme;
 
 import android.Manifest;
-import android.app.IntentService;
 import android.app.Service;
-import android.arch.persistence.db.SupportSQLiteOpenHelper;
-import android.arch.persistence.room.DatabaseConfiguration;
-import android.arch.persistence.room.InvalidationTracker;
 import android.arch.persistence.room.Room;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
-import android.location.LocationManager;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
@@ -18,7 +13,6 @@ import android.widget.Toast;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.tasks.OnSuccessListener;
 
 /**
@@ -44,35 +38,38 @@ public class GPSNodeService extends Service {
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
     }
 
-    public void getLocation(){
+    public void getLocation() {
+        checkFineLocationPermission();
+        mFusedLocationClient.getLastLocation().addOnSuccessListener(new MySuccessListener());
+    }
+
+    private void checkFineLocationPermission() {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            Toast.makeText(this,
+                    "Does not have permission to track. Stopping.",
+                    Toast.LENGTH_SHORT).
+                    show();
+            stopSelf();
+        }
     }
 
     class MySuccessListener implements OnSuccessListener<Location>{
-
-
         @Override
         public void onSuccess(Location location) {
-            NodeEntity node = new NodeEntity(
-                    lastUsedID + 1,
-                    location.getLatitude(),
-                    location.getLongitude(),
-                    lastUsedID);
-            mDataBase.nodeDao().insertAll(node);
+            if(location != null) {
+                NodeEntity node = new NodeEntity(
+                        lastUsedID + 1,
+                        location.getLatitude(),
+                        location.getLongitude(),
+                        lastUsedID);
+                mDataBase.nodeDao().insertAll(node);
+            }
         }
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        if(!hasPermissionToTrack){
-            Toast.makeText(this,
-                    "Does not have permission to track. Stopping.",
-                    Toast.LENGTH_SHORT).
-                    show();
-
-            stopSelf();
-        }
         return super.onStartCommand(intent, flags, startId);
-
     }
 
     @Override

@@ -20,7 +20,8 @@
             android:value="@string/google_maps_key" />
 
         <service android:name=".GPSNodeService"
-            android:description="Tracks where you have been for the TrackMe app."/>
+            android:description="Tracks where you have been for the TrackMe app."
+            />
         <activity
             android:name=".MapsActivity"
             android:label="@string/title_activity_maps">
