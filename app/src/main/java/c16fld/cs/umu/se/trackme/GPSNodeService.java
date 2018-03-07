@@ -32,36 +32,8 @@ public class GPSNodeService extends Service  {
     private int lastUsedID = 0;
 
     private LocationManager mLocationManager;
-    LocationListener[] mLocationListeners;
+    private LocationListener[] mLocationListeners;
     private NodeDB mDataBase;
-
-    private class MyLocationListener implements LocationListener{
-
-        @Override
-        public void onLocationChanged(Location location) {
-            NodeEntity node = new NodeEntity(
-                    lastUsedID + 1,
-                    location.getLatitude(),
-                    location.getLongitude(),
-                    lastUsedID);
-            mDataBase.nodeDao().insertAll(node);
-        }
-
-        @Override
-        public void onStatusChanged(String s, int i, Bundle bundle) {
-            Log.d(TAG, "onStatusChanged: " + s);
-        }
-
-        @Override
-        public void onProviderEnabled(String s) {
-            Log.d(TAG, "onProviderEnabled: " + s);
-        }
-
-        @Override
-        public void onProviderDisabled(String s) {
-            Log.d(TAG, "onProviderDisabled: " + s);
-        }
-    }
 
     @Override
     public void onCreate() {
@@ -70,7 +42,7 @@ public class GPSNodeService extends Service  {
         mDataBase = Room.databaseBuilder(
                 getApplicationContext(),
                 NodeDB.class,
-                "Node-database")
+                getString(R.string.database_name))
                 .build();
 
         mLocationManager = (LocationManager)
@@ -120,6 +92,34 @@ public class GPSNodeService extends Service  {
                     Toast.LENGTH_SHORT).
                     show();
             stopSelf();
+        }
+    }
+
+    private class MyLocationListener implements LocationListener{
+
+        @Override
+        public void onLocationChanged(Location location) {
+            NodeEntity node = new NodeEntity(
+                    lastUsedID + 1,
+                    location.getLatitude(),
+                    location.getLongitude(),
+                    lastUsedID);
+            mDataBase.nodeDao().insertAll(node);
+        }
+
+        @Override
+        public void onStatusChanged(String s, int i, Bundle bundle) {
+            Log.d(TAG, "onStatusChanged: " + s);
+        }
+
+        @Override
+        public void onProviderEnabled(String s) {
+            Log.d(TAG, "onProviderEnabled: " + s);
+        }
+
+        @Override
+        public void onProviderDisabled(String s) {
+            Log.d(TAG, "onProviderDisabled: " + s);
         }
     }
 
