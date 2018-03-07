@@ -9,6 +9,7 @@ import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
@@ -31,6 +32,8 @@ public class GPSNodeService extends Service  {
     private int mMinDistance = 200;
     private int lastUsedID = 0;
 
+    private boolean databaseIsSetUp = false;
+
     private LocationManager mLocationManager;
     private LocationListener[] mLocationListeners;
     private NodeDB mDataBase;
@@ -39,11 +42,7 @@ public class GPSNodeService extends Service  {
     public void onCreate() {
         super.onCreate();
         Log.e(TAG, "onCreate GPSService");
-        mDataBase = Room.databaseBuilder(
-                getApplicationContext(),
-                NodeDB.class,
-                getString(R.string.database_name))
-                .build();
+        new DataBaseSetUp().execute();
 
         mLocationManager = (LocationManager)
                 getApplicationContext().
@@ -52,8 +51,6 @@ public class GPSNodeService extends Service  {
         mLocationListeners = new LocationListener[]{
                 new MyLocationListener()
         };
-
-        updateLastUsedDBID();
 
     }
 
@@ -65,25 +62,10 @@ public class GPSNodeService extends Service  {
                 mHalfHour,
                 mMinDistance,
                 mLocationListeners[0]);
-        return super.onStartCommand(intent, flags, startId);
+        return START_NOT_STICKY;
     }
 
-    private void updateLastUsedDBID() {
-        ArrayList<NodeEntity> nodeEntities = (ArrayList<NodeEntity>) mDataBase.nodeDao().getAll();
 
-        boolean foundNewId = false;
-        while(!foundNewId){
-
-            foundNewId = true;
-            for (NodeEntity nodeEntity : nodeEntities) {
-                if(nodeEntity.getId() == lastUsedID){
-                    lastUsedID++;
-                    foundNewId = false;
-                }
-            }
-
-        }
-    }
 
     private void checkFineLocationPermission() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
@@ -99,12 +81,20 @@ public class GPSNodeService extends Service  {
 
         @Override
         public void onLocationChanged(Location location) {
-            NodeEntity node = new NodeEntity(
-                    lastUsedID + 1,
-                    location.getLatitude(),
-                    location.getLongitude(),
-                    lastUsedID);
-            mDataBase.nodeDao().insertAll(node);
+            if(location != null) {
+                NodeEntity node = new NodeEntity(
+                        lastUsedID + 1,
+                        location.getLatitude(),
+                        location.getLongitude(),
+                        lastUsedID);
+
+                new InsertIntoDatabase(node).execute();
+
+            } else {
+                Toast.makeText(GPSNodeService.this,
+                        "Tried storing node but was null.",
+                        Toast.LENGTH_LONG).show();
+            }
         }
 
         @Override
@@ -137,5 +127,79 @@ public class GPSNodeService extends Service  {
     @Override
     public void onDestroy() {
         super.onDestroy();
+        mLocationManager.removeUpdates(mLocationListeners[0]);
+    }
+
+    private class InsertIntoDatabase extends AsyncTask<Void, Void, Void> {
+        private NodeEntity entityToInsert;
+        public InsertIntoDatabase(NodeEntity entityToInsert) {
+            this.entityToInsert = entityToInsert;
+        }
+
+        @Override
+        protected Void doInBackground(Void... voids) {
+            if(databaseIsSetUp && mDataBase != null) {
+                mDataBase.nodeDao().insertAll(entityToInsert);
+            } else{
+                Toast.makeText(GPSNodeService.this,
+                        "Database not found. Could not insert.",
+                        Toast.LENGTH_LONG).show();
+            }
+            //load nodes from database.
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+            Log.e(TAG, "onPostExecute InsertIntoDatabase");
+
+            Toast.makeText(GPSNodeService.this,
+                    "Stored location @ lat: "
+                            + entityToInsert.getLatitude()
+                            + ", long: "
+                            + entityToInsert.getLongitude(),
+                    Toast.LENGTH_LONG).show();
+        }
+    }
+
+
+    private class DataBaseSetUp extends AsyncTask<Void, Void, Void> {
+
+        @Override
+        protected Void doInBackground(Void... voids) {
+            mDataBase = Room.databaseBuilder(
+                    getApplicationContext(),
+                    NodeDB.class,
+                    getString(R.string.database_name))
+                    .build();
+
+            updateLastUsedDBID();
+
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+            databaseIsSetUp = true;
+        }
+
+        private void updateLastUsedDBID() {
+            ArrayList<NodeEntity> nodeEntities = (ArrayList<NodeEntity>) mDataBase.nodeDao().getAll();
+
+            boolean foundNewId = false;
+            while(!foundNewId){
+
+                foundNewId = true;
+                for (NodeEntity nodeEntity : nodeEntities) {
+                    if(nodeEntity.getId() == lastUsedID){
+                        lastUsedID++;
+                        foundNewId = false;
+                    }
+                }
+
+            }
+        }
     }
 }

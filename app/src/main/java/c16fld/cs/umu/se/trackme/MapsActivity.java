@@ -2,8 +2,10 @@ package c16fld.cs.umu.se.trackme;
 
 import android.Manifest;
 import android.arch.persistence.room.Room;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
@@ -42,27 +44,19 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
-        //load database.
-        mNodeDatabase = Room.databaseBuilder(
-                getApplicationContext(),
-                NodeDB.class,
-                getString(R.string.database_name))
-                .build();
-
-        //load nodes from database.
-        nodes = (ArrayList<NodeEntity>) mNodeDatabase.nodeDao().getAll();
-
-
-        checkLocationSettings();
+        //load nodes and set up database
+        new DataBaseSetUp().execute();
 
         //find last known location.
         checkFineLocationPermission();
         mFusedLocationClient.getLastLocation()
                 .addOnSuccessListener(this, new MyOnSuccessListener());
+
+        startLocationService();
     }
-
-    private void checkLocationSettings() {
-
+    private void startLocationService() {
+        Intent intent = new Intent(this, GPSNodeService.class);
+        startService(intent);
     }
 
     @Override
@@ -84,6 +78,26 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 lastKnownLocation = new LatLng(location.getLatitude(), location.getLongitude());
                 mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(lastKnownLocation, MAP_ZOOM));
             }
+        }
+    }
+
+    private class DataBaseSetUp extends AsyncTask<Void, Void, Void>{
+        public DataBaseSetUp() {
+            super();
+        }
+
+
+        @Override
+        protected Void doInBackground(Void... voids) {
+            mNodeDatabase = Room.databaseBuilder(
+                    getApplicationContext(),
+                    NodeDB.class,
+                    getString(R.string.database_name))
+                    .build();
+
+            //load nodes from database.
+            nodes = (ArrayList<NodeEntity>) mNodeDatabase.nodeDao().getAll();
+            return null;
         }
     }
 }
