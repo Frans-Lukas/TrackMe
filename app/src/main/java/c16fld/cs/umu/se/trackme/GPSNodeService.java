@@ -33,6 +33,7 @@ public class GPSNodeService extends Service  {
     private int lastUsedID = 0;
 
     private boolean databaseIsSetUp = false;
+    private boolean uniqueIdFound = false;
 
     private LocationManager mLocationManager;
     private LocationListener[] mLocationListeners;
@@ -43,6 +44,9 @@ public class GPSNodeService extends Service  {
         super.onCreate();
         Log.e(TAG, "onCreate GPSService");
         new DataBaseSetUp().execute();
+
+        databaseIsSetUp = false;
+        uniqueIdFound = false;
 
         mLocationManager = (LocationManager)
                 getApplicationContext().
@@ -78,15 +82,12 @@ public class GPSNodeService extends Service  {
     }
 
     private class MyLocationListener implements LocationListener{
-
         @Override
         public void onLocationChanged(Location location) {
-            if(location != null) {
+            if(location != null && uniqueIdFound) {
                 NodeEntity node = new NodeEntity(
-                        lastUsedID + 1,
                         location.getLatitude(),
-                        location.getLongitude(),
-                        lastUsedID);
+                        location.getLongitude());
 
                 new InsertIntoDatabase(node).execute();
 
@@ -138,7 +139,7 @@ public class GPSNodeService extends Service  {
 
         @Override
         protected Void doInBackground(Void... voids) {
-            if(databaseIsSetUp && mDataBase != null) {
+            if(databaseIsSetUp && mDataBase != null && uniqueIdFound) {
                 mDataBase.nodeDao().insertAll(entityToInsert);
             } else{
                 Toast.makeText(GPSNodeService.this,
@@ -183,6 +184,7 @@ public class GPSNodeService extends Service  {
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
             databaseIsSetUp = true;
+            uniqueIdFound = true;
         }
 
         private void updateLastUsedDBID() {
@@ -190,7 +192,6 @@ public class GPSNodeService extends Service  {
 
             boolean foundNewId = false;
             while(!foundNewId){
-
                 foundNewId = true;
                 for (NodeEntity nodeEntity : nodeEntities) {
                     if(nodeEntity.getId() == lastUsedID){

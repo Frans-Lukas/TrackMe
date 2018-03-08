@@ -10,7 +10,7 @@ import android.arch.persistence.room.PrimaryKey;
 
 @Entity
 public class NodeEntity {
-    @PrimaryKey
+    @PrimaryKey(autoGenerate =  true)
     private int id;
 
     @ColumnInfo(name = "latitude")
@@ -22,12 +22,11 @@ public class NodeEntity {
     @ColumnInfo(name = "prev_node_id")
     private int prevID;
 
-    public NodeEntity(int id, double latitude, double longitude, int prevID) {
-        this.id = id;
+    public NodeEntity(double latitude, double longitude) {
         this.latitude = latitude;
         this.longitude = longitude;
-        this.prevID = prevID;
     }
+
 
     public NodeEntity() {
     }
