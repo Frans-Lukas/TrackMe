@@ -66,10 +66,8 @@ public class GPSNodeService extends Service  {
                 mHalfHour,
                 mMinDistance,
                 mLocationListeners[0]);
-        return START_NOT_STICKY;
+        return START_STICKY;
     }
-
-
 
     private void checkFineLocationPermission() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
@@ -116,6 +114,8 @@ public class GPSNodeService extends Service  {
 
     @Override
     public boolean stopService(Intent name) {
+
+        Toast.makeText(this, "Service stopped for some reason?", Toast.LENGTH_LONG).show();
         return super.stopService(name);
     }
 

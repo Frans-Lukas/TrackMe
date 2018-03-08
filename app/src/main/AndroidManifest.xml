@@ -22,8 +22,10 @@
             android:name="com.google.android.geo.API_KEY"
             android:value="@string/google_maps_key" />
 
-        <service android:name=".GPSNodeService"
-            />
+        <service
+            android:name=".GPSNodeService"
+            android:enabled="true"
+            android:label="TrackMeService" />
         <activity
             android:name=".MapsActivity"
             android:label="@string/title_activity_maps">

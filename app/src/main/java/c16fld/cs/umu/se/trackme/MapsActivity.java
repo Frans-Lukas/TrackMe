@@ -6,12 +6,14 @@ import android.arch.persistence.room.Room;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
+import android.location.LocationManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
@@ -21,6 +23,7 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 
@@ -32,10 +35,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private static final int PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1;
     private static final String KEY_CAMERA_POSITION = "camera_position";
     private static final String KEY_LOCATION = "location";
+    public static final int MIN_DISTANCE_BETWEEN_NODES = 25;
 
     private GoogleMap mMap;
     private FusedLocationProviderClient mFusedLocationClient;
     private boolean mLocationPermissionGranted = false;
+    private boolean mDataBaseHasBeenSetUp = false;
 
     private NodeDB mNodeDatabase;
     private ArrayList<NodeEntity> nodes = null;
@@ -112,7 +117,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             super();
         }
 
-
         @Override
         protected Void doInBackground(Void... voids) {
             mNodeDatabase = Room.databaseBuilder(
@@ -124,8 +128,47 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
             //load nodes from database.
             nodes = (ArrayList<NodeEntity>) mNodeDatabase.nodeDao().getAll();
+
+
             return null;
         }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+            //draw poly lines on map
+            drawPolyLines();
+        }
+
+
+    }
+    private void drawPolyLines() {
+        ArrayList<LatLng> latLngs = new ArrayList<>();
+        for (NodeEntity node : nodes) {
+
+
+            LatLng newNode = new LatLng(node.getLatitude(), node.getLongitude());
+            if(latLngs.size() > 0) {
+                //don't add nodes that are close to each other to the poly line.
+                LatLng prevNode = latLngs.get(latLngs.size() - 1);
+                Location prevLocation = new Location(LocationManager.GPS_PROVIDER);
+                prevLocation.setLatitude(prevNode.latitude);
+                prevLocation.setLongitude(prevNode.longitude);
+
+                Location newLocation = new Location(LocationManager.GPS_PROVIDER);
+                newLocation.setLatitude(newNode.latitude);
+                newLocation.setLongitude(newNode.longitude);
+
+                if (newLocation.distanceTo(prevLocation) > MIN_DISTANCE_BETWEEN_NODES) {
+                    latLngs.add(newNode);
+                }
+            } else{
+                latLngs.add(newNode);
+            }
+
+        }
+        Toast.makeText(this, "Added new line with " + latLngs.size() + " nodes.", Toast.LENGTH_SHORT).show();
+        mMap.addPolyline(new PolylineOptions().addAll(latLngs));
     }
 
     @Override
@@ -160,6 +203,15 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         } catch(SecurityException e){
             Log.e("Exception: %s", e.getMessage());
         }
+        mMap.setOnMyLocationButtonClickListener(new GoogleMap.OnMyLocationButtonClickListener() {
+            @Override
+            public boolean onMyLocationButtonClick() {
+                if(mDataBaseHasBeenSetUp) {
+                    //drawPolyLines();
+                }
+                return false;
+            }
+        });
     }
 
     private void getDeviceLocation() {
