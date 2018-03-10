@@ -91,7 +91,6 @@ public class GPSNodeService extends Service  {
                         Calendar.getInstance().getTime().toString());
 
                 new InsertIntoDatabase(node).execute();
-
             } else {
                 Toast.makeText(GPSNodeService.this,
                         "Tried storing node but was null.",

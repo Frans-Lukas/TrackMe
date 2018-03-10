@@ -12,8 +12,11 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
-import android.support.v4.app.FragmentActivity;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.widget.Toast;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -32,7 +35,7 @@ import com.google.android.gms.tasks.Task;
 
 import java.util.ArrayList;
 
-public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
+public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback {
 
     public static final int DEFAULT_ZOOM = 15;
     private static final int PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1;
@@ -75,6 +78,29 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         startLocationService();
     }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()){
+            case R.id.action_settings:
+                goToSettingsMenu();
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
+
+    private void goToSettingsMenu() {
+        
+    }
+
     private void startLocationService() {
         Intent intent = new Intent(this, GPSNodeService.class);
         startService(intent);
@@ -155,42 +181,42 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     private void drawTrail() {
         ArrayList<LatLng> latLngs = new ArrayList<>();
-        for (NodeEntity node : nodes) {
+        if(nodes != null && nodes.size() > 0 && mMap != null) {
+            for (NodeEntity node : nodes) {
+                LatLng newNode = new LatLng(node.getLatitude(), node.getLongitude());
+                if (latLngs.size() > 0) {
+                    //don't add nodes that are close to each other to the poly line.
+                    LatLng prevNode = latLngs.get(latLngs.size() - 1);
+                    Location prevLocation = new Location(LocationManager.GPS_PROVIDER);
+                    prevLocation.setLatitude(prevNode.latitude);
+                    prevLocation.setLongitude(prevNode.longitude);
 
+                    Location newLocation = new Location(LocationManager.GPS_PROVIDER);
+                    newLocation.setLatitude(newNode.latitude);
+                    newLocation.setLongitude(newNode.longitude);
 
-            LatLng newNode = new LatLng(node.getLatitude(), node.getLongitude());
-            if(latLngs.size() > 0) {
-                //don't add nodes that are close to each other to the poly line.
-                LatLng prevNode = latLngs.get(latLngs.size() - 1);
-                Location prevLocation = new Location(LocationManager.GPS_PROVIDER);
-                prevLocation.setLatitude(prevNode.latitude);
-                prevLocation.setLongitude(prevNode.longitude);
-
-                Location newLocation = new Location(LocationManager.GPS_PROVIDER);
-                newLocation.setLatitude(newNode.latitude);
-                newLocation.setLongitude(newNode.longitude);
-
-                if (newLocation.distanceTo(prevLocation) > MIN_DISTANCE_BETWEEN_NODES) {
+                    if (newLocation.distanceTo(prevLocation) > MIN_DISTANCE_BETWEEN_NODES) {
+                        latLngs.add(newNode);
+                    }
+                } else {
                     latLngs.add(newNode);
                 }
-            } else{
-                latLngs.add(newNode);
+
+            }
+            Toast.makeText(this, "Added new line with " + latLngs.size() + " nodes.", Toast.LENGTH_SHORT).show();
+            mMap.addPolyline(new PolylineOptions().addAll(latLngs).color(Color.BLUE));
+
+            for (LatLng latLng : latLngs) {
+                mMap.addCircle(new CircleOptions()
+                        .center(latLng)
+                        .radius(NODE_CIRCLE_RADIUS)
+                        .fillColor(Color.BLUE)
+                        .strokeColor(Color.BLUE)
+                        .clickable(true));
             }
 
+            mMap.setOnCircleClickListener(new MyOnCircleClickListener());
         }
-        Toast.makeText(this, "Added new line with " + latLngs.size() + " nodes.", Toast.LENGTH_SHORT).show();
-        mMap.addPolyline(new PolylineOptions().addAll(latLngs).color(Color.BLUE));
-
-        for (LatLng latLng : latLngs) {
-            mMap.addCircle(new CircleOptions()
-                    .center(latLng)
-                    .radius(NODE_CIRCLE_RADIUS)
-                    .fillColor(Color.BLUE)
-                    .strokeColor(Color.BLUE)
-                    .clickable(true));
-        }
-
-        mMap.setOnCircleClickListener(new MyOnCircleClickListener());
     }
 
     private class MyOnCircleClickListener implements GoogleMap.OnCircleClickListener{
@@ -284,6 +310,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         } catch(SecurityException e)  {
             Log.e("Exception: %s", e.getMessage());
         }
-
     }
+
 }
