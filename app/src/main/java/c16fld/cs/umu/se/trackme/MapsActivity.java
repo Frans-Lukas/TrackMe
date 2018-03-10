@@ -5,6 +5,7 @@ import android.annotation.SuppressLint;
 import android.arch.persistence.room.Room;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.AsyncTask;
@@ -22,6 +23,8 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.CameraPosition;
+import com.google.android.gms.maps.model.Circle;
+import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -36,6 +39,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private static final String KEY_CAMERA_POSITION = "camera_position";
     private static final String KEY_LOCATION = "location";
     public static final int MIN_DISTANCE_BETWEEN_NODES = 25;
+    public static final float NODE_CIRCLE_RADIUS = 2.0f;
 
     private GoogleMap mMap;
     private FusedLocationProviderClient mFusedLocationClient;
@@ -137,12 +141,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
             //draw poly lines on map
-            drawPolyLines();
+            drawTrail();
         }
 
 
     }
-    private void drawPolyLines() {
+    private void drawTrail() {
         ArrayList<LatLng> latLngs = new ArrayList<>();
         for (NodeEntity node : nodes) {
 
@@ -168,8 +172,38 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         }
         Toast.makeText(this, "Added new line with " + latLngs.size() + " nodes.", Toast.LENGTH_SHORT).show();
-        mMap.addPolyline(new PolylineOptions().addAll(latLngs));
+        mMap.addPolyline(new PolylineOptions().addAll(latLngs).color(Color.BLUE));
+
+        for (LatLng latLng : latLngs) {
+            mMap.addCircle(new CircleOptions()
+                    .center(latLng)
+                    .radius(NODE_CIRCLE_RADIUS)
+                    .fillColor(Color.BLUE)
+                    .strokeColor(Color.BLUE)
+                    .clickable(true));
+        }
+
+        mMap.setOnCircleClickListener(new MyOnCircleClickListener());
     }
+
+    private class MyOnCircleClickListener implements GoogleMap.OnCircleClickListener{
+        @Override
+        public void onCircleClick(Circle circle) {
+            boolean foundMatch = false;
+            for (NodeEntity node : nodes) {
+                if(circle.getCenter().latitude == node.getLatitude() &&
+                        circle.getCenter().longitude == node.getLongitude()){
+                    Toast.makeText(MapsActivity.this, "Clicked on node with lat: " + node.getLatitude() +
+                                            ", long: " + node.getLongitude(), Toast.LENGTH_LONG);
+                    foundMatch = true;
+                    break;
+                }
+            }
+            Toast.makeText(MapsActivity.this, "Could not find node.", Toast.LENGTH_LONG);
+
+        }
+    }
+
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
@@ -207,7 +241,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public boolean onMyLocationButtonClick() {
                 if(mDataBaseHasBeenSetUp) {
-                    //drawPolyLines();
+                    //drawTrail();
                 }
                 return false;
             }
