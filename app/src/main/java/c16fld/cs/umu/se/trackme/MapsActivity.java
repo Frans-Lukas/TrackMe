@@ -38,8 +38,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private static final int PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1;
     private static final String KEY_CAMERA_POSITION = "camera_position";
     private static final String KEY_LOCATION = "location";
-    public static final int MIN_DISTANCE_BETWEEN_NODES = 25;
-    public static final float NODE_CIRCLE_RADIUS = 2.0f;
+    public static final int MIN_DISTANCE_BETWEEN_NODES = 100;
+    public static final float NODE_CIRCLE_RADIUS = 4.0f;
 
     private GoogleMap mMap;
     private FusedLocationProviderClient mFusedLocationClient;
@@ -146,6 +146,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
 
     }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        drawTrail();
+    }
+
     private void drawTrail() {
         ArrayList<LatLng> latLngs = new ArrayList<>();
         for (NodeEntity node : nodes) {
@@ -194,13 +201,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 if(circle.getCenter().latitude == node.getLatitude() &&
                         circle.getCenter().longitude == node.getLongitude()){
                     Toast.makeText(MapsActivity.this, "Clicked on node with lat: " + node.getLatitude() +
-                                            ", long: " + node.getLongitude(), Toast.LENGTH_LONG);
+                                            ", long: " + node.getLongitude(), Toast.LENGTH_SHORT).show();
                     foundMatch = true;
                     break;
                 }
             }
-            Toast.makeText(MapsActivity.this, "Could not find node.", Toast.LENGTH_LONG);
-
+            if(!foundMatch) {
+                Toast.makeText(MapsActivity.this, "Could not find node.", Toast.LENGTH_SHORT).show();
+            }
         }
     }
 

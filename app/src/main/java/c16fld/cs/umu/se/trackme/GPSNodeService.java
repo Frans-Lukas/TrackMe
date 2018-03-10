@@ -18,6 +18,7 @@ import android.util.Log;
 import android.widget.Toast;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 
 import static android.content.ContentValues.TAG;
 
@@ -26,9 +27,12 @@ import static android.content.ContentValues.TAG;
  */
 
 public class GPSNodeService extends Service  {
-    private int mSecond = 1000;
-    private int mMinute = mSecond * 60;
-    private int mHalfHour = mMinute * 30;
+    private static final int mSecond = 1000;
+    private static final int mMinute = mSecond * 60;
+    private static final int mHalfHour = mMinute * 30;
+
+    private static final int trackTime = mMinute * 10;
+
     private int mMinDistance = 200;
     private int lastUsedID = 0;
 
@@ -36,7 +40,7 @@ public class GPSNodeService extends Service  {
     private boolean uniqueIdFound = false;
 
     private LocationManager mLocationManager;
-    private LocationListener[] mLocationListeners;
+    private LocationListener mLocationListeners;
     private NodeDB mDataBase;
 
     @Override
@@ -52,9 +56,7 @@ public class GPSNodeService extends Service  {
                 getApplicationContext().
                 getSystemService(Context.LOCATION_SERVICE);
 
-        mLocationListeners = new LocationListener[]{
-                new MyLocationListener()
-        };
+        mLocationListeners = new MyLocationListener();
 
     }
 
@@ -63,9 +65,9 @@ public class GPSNodeService extends Service  {
         checkFineLocationPermission();
         mLocationManager.requestLocationUpdates(
                 LocationManager.GPS_PROVIDER,
-                mHalfHour,
+                trackTime,
                 mMinDistance,
-                mLocationListeners[0]);
+                mLocationListeners);
         return START_STICKY;
     }
 
@@ -85,7 +87,8 @@ public class GPSNodeService extends Service  {
             if(location != null && uniqueIdFound) {
                 NodeEntity node = new NodeEntity(
                         location.getLatitude(),
-                        location.getLongitude());
+                        location.getLongitude(),
+                        Calendar.getInstance().getTime().toString());
 
                 new InsertIntoDatabase(node).execute();
 
@@ -128,7 +131,7 @@ public class GPSNodeService extends Service  {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        mLocationManager.removeUpdates(mLocationListeners[0]);
+        mLocationManager.removeUpdates(mLocationListeners);
     }
 
     private class InsertIntoDatabase extends AsyncTask<Void, Void, Void> {
