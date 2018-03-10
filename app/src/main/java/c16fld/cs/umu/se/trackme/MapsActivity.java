@@ -98,7 +98,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     private void goToSettingsMenu() {
-        
+        Intent intent = new Intent(this, SettingsActivity.class);
+        startActivity(intent);
     }
 
     private void startLocationService() {
