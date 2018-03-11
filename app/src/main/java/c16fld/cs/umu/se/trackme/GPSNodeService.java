@@ -32,11 +32,10 @@ import static android.content.ContentValues.TAG;
 public class GPSNodeService extends Service  {
     private static final int mSecond = 1000;
     private static final int mMinute = mSecond * 60;
-    private static final int mHalfHour = mMinute * 30;
 
-    private static final int trackTime = mMinute * 10;
-
+    private int mTrackTime = mMinute * 10;
     private int mMinDistance = 200;
+
     private int lastUsedID = 0;
 
     private boolean databaseIsSetUp = false;
@@ -45,6 +44,8 @@ public class GPSNodeService extends Service  {
     private LocationManager mLocationManager;
     private LocationListener mLocationListeners;
     private NodeDB mDataBase;
+
+
 
     @Override
     public void onCreate() {
@@ -65,10 +66,13 @@ public class GPSNodeService extends Service  {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        mTrackTime = intent.getIntExtra(getString(R.string.intervalKey), mTrackTime);
+        mMinDistance = intent.getIntExtra(getString(R.string.minDistanceKey), mMinDistance);
+
         checkFineLocationPermission();
         mLocationManager.requestLocationUpdates(
                 LocationManager.GPS_PROVIDER,
-                trackTime,
+                mTrackTime,
                 mMinDistance,
                 mLocationListeners);
         return START_STICKY;

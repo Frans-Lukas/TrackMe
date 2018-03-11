@@ -3,23 +3,24 @@
 
 
     <EditTextPreference
-        android:defaultValue="200"
-        android:key="edit_text_preference_node_distance"
+        android:defaultValue="@string/defaultDistanceSettingsValue"
+        android:key="@string/minDistanceKey"
         android:selectAllOnFocus="true"
         android:numeric="integer"
         android:singleLine="true"
-        android:title="Min distance between nodes"
-        android:summary="The minimum distance between two connected nodes"/>
+        android:title="@string/settingsMinDistanceTitle"
+        android:summary="@string/settingsMinDistanceSummary"/>
     <EditTextPreference
-        android:defaultValue="10"
-        android:key="edit_text_preference_location_time"
+        android:defaultValue="@string/defaultIntervalSettingsValue"
+        android:key="@string/intervalKey"
         android:selectAllOnFocus="true"
+        android:numeric="integer"
         android:singleLine="true"
-        android:title="Recording interval"
-        android:summary="How often the app will record your location and store its data."/>
+        android:title="@string/settingsIntervalTitle"
+        android:summary="@string/settingsIntervalSummary"/>
     <SwitchPreference
         android:defaultValue="true"
-        android:key="switch_preference_track_me"
-        android:title="Tracking"
-        android:summary="Whether or not the app should track you."/>
+        android:key="@string/trackMeKey"
+        android:title="@string/settingsTrackBoolTitle"
+        android:summary="@string/settingsTrackBoolSummary"/>
 </PreferenceScreen>

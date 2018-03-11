@@ -4,4 +4,16 @@
     <string name="database_name">Node-database</string>
     <string name="action_settings">Settings</string>
     <string name="title_activity_settings">SettingsActivity</string>
+    <string name="defaultIntervalSettingsValue">10</string>
+    <string name="defaultDistanceSettingsValue">200</string>
+    <string name="settingsIntervalTitle">Recording interval</string>
+    <string name="settingsIntervalSummary">How often (in minutes) the app will record your location and store its data.</string>
+    <string name="settingsTrackBoolTitle">Tracking</string>
+    <string name="settingsTrackBoolSummary">Whether or not the app should track you.</string>
+    <string name="settingsMinDistanceSummary">The minimum distance (in meters) between two connected nodes</string>
+    <string name="settingsMinDistanceTitle">Min distance between nodes</string>
+    <string name="minDistanceKey">edit_text_preference_node_distance</string>
+    <string name="intervalKey">edit_text_preference_location_time</string>
+    <string name="trackMeKey">switch_preference_track_me</string>
+    <string name="trackIntervalExtraKey">TrackInterval</string>
 </resources>

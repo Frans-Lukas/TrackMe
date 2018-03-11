@@ -4,12 +4,14 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.arch.persistence.room.Room;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -44,18 +46,26 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private static final int PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1;
     private static final String KEY_CAMERA_POSITION = "camera_position";
     private static final String KEY_LOCATION = "location";
-    public static final int MIN_DISTANCE_BETWEEN_NODES = 100;
     public static final float NODE_CIRCLE_RADIUS = 4.0f;
+    private static final int mSecond = 1000;
+    private static final int mMinute = mSecond * 60;
 
     private GoogleMap mMap;
     private FusedLocationProviderClient mFusedLocationClient;
+
     private boolean mLocationPermissionGranted = false;
     private boolean mDataBaseHasBeenSetUp = false;
+
+    private boolean mShouldTrackUser = false;
+    private int mTrackInterval = 10;
+    private int mNodeDistance = 100;
 
     private NodeDB mNodeDatabase;
     private ArrayList<NodeEntity> nodes = null;
     private Location mLastKnownLocation  = null;
     private CameraPosition mCameraPosition;
+
+    private SharedPreferences mSharedPref;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -73,6 +83,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
+        loadPreferences();
+
 
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
@@ -80,6 +92,21 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         new DataBaseSetUp().execute();
 
         startLocationService();
+    }
+
+    private void loadPreferences() {
+        mSharedPref = PreferenceManager.getDefaultSharedPreferences(this);
+        PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
+        mShouldTrackUser = mSharedPref.getBoolean(
+                SettingsActivity.KEY_SHOULD_TRACK_PREFERENCE,
+                false);
+        mTrackInterval = mSharedPref.getInt(
+                SettingsActivity.KEY_INTERVAL_PREFERENCE,
+                mTrackInterval)
+                * mMinute;
+        mNodeDistance = mSharedPref.getInt(
+                SettingsActivity.KEY_MIN_DISTANCE_PREFERENCE,
+                mNodeDistance);
     }
 
     @Override
@@ -107,6 +134,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     private void startLocationService() {
         Intent intent = new Intent(this, GPSNodeService.class);
+        intent.putExtra(getString(R.string.intervalKey), mTrackInterval);
+        intent.putExtra(getString(R.string.minDistanceKey), mNodeDistance);
         startService(intent);
     }
 
@@ -199,7 +228,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     newLocation.setLatitude(newNode.latitude);
                     newLocation.setLongitude(newNode.longitude);
 
-                    if (newLocation.distanceTo(prevLocation) > MIN_DISTANCE_BETWEEN_NODES) {
+                    if (newLocation.distanceTo(prevLocation) > mNodeDistance) {
                         latLngs.add(newNode);
                     }
                 } else {
