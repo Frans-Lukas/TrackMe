@@ -1,4 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
 
+
+    <EditTextPreference
+        android:defaultValue="200"
+        android:key="edit_text_preference_node_distance"
+        android:selectAllOnFocus="true"
+        android:numeric="integer"
+        android:singleLine="true"
+        android:title="Min distance between nodes"
+        android:summary="The minimum distance between two connected nodes"/>
+    <EditTextPreference
+        android:defaultValue="10"
+        android:key="edit_text_preference_location_time"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:title="Recording interval"
+        android:summary="How often the app will record your location and store its data."/>
+    <SwitchPreference
+        android:defaultValue="true"
+        android:key="switch_preference_track_me"
+        android:title="Tracking"
+        android:summary="Whether or not the app should track you."/>
 </PreferenceScreen>
