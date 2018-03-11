@@ -25,10 +25,4 @@
         android:layout_marginTop="@dimen/listSpacing"
         android:text="Date/Time" />
 
-    <Button
-        android:id="@+id/buttonDeleteNode"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Delete Node" />
-
 </LinearLayout>

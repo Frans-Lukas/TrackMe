@@ -43,13 +43,16 @@ import c16fld.cs.umu.se.trackme.Database.NodeEntity;
 public class MapsActivity extends AppCompatActivity
                             implements OnMapReadyCallback{
 
-    public static final int DEFAULT_ZOOM = 15;
+    private static final int DEFAULT_ZOOM = 15;
     private static final int PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1;
     private static final String KEY_CAMERA_POSITION = "camera_position";
     private static final String KEY_LOCATION = "location";
-    public static final float NODE_CIRCLE_RADIUS = 4.0f;
+    private static final float NODE_CIRCLE_RADIUS = 4.0f;
     private static final int mSecond = 1000;
     private static final int mMinute = mSecond * 60;
+
+    public static final String ADDRESS_KEY = "address";
+    public static final String TIME_KEY = "time";
 
     private GoogleMap mMap;
     private FusedLocationProviderClient mFusedLocationClient;
@@ -275,9 +278,10 @@ public class MapsActivity extends AppCompatActivity
             for (NodeEntity node : nodes) {
                 if(circle.getCenter().latitude == node.getLatitude() &&
                         circle.getCenter().longitude == node.getLongitude()){
-                    Toast.makeText(MapsActivity.this, "Clicked on node with lat: " + node.getLatitude() +
-                                            ", long: " + node.getLongitude() + ", address: " +
-                            node.getAddress(), Toast.LENGTH_SHORT).show();
+                    Intent intent = new Intent(MapsActivity.this, LocationInformation.class);
+                    intent.putExtra(ADDRESS_KEY, node.getAddress());
+                    intent.putExtra(TIME_KEY, node.getTime());
+                    startActivity(intent);
                     foundMatch = true;
                     break;
                 }
@@ -320,15 +324,6 @@ public class MapsActivity extends AppCompatActivity
         } catch(SecurityException e){
             Log.e("Exception: %s", e.getMessage());
         }
-        mMap.setOnMyLocationButtonClickListener(new GoogleMap.OnMyLocationButtonClickListener() {
-            @Override
-            public boolean onMyLocationButtonClick() {
-                if(mDataBaseHasBeenSetUp) {
-                    //drawTrail();
-                }
-                return false;
-            }
-        });
     }
 
     private void getDeviceLocation() {
