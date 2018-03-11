@@ -8,7 +8,7 @@
     tools:context="c16fld.cs.umu.se.trackme.LocationInformation">
 
     <TextView
-        android:id="@+id/textView4"
+        android:id="@+id/textViewAddress"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:textSize="@dimen/bodyTextSize"
@@ -17,7 +17,7 @@
         android:text="Address" />
 
     <TextView
-        android:id="@+id/textView5"
+        android:id="@+id/textViewDateTime"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:textSize="@dimen/bodyTextSize"
@@ -25,12 +25,10 @@
         android:layout_marginTop="@dimen/listSpacing"
         android:text="Date/Time" />
 
-    <TextView
-        android:id="@+id/textView6"
+    <Button
+        android:id="@+id/buttonDeleteNode"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginLeft="@dimen/edgeStandardMargin"
-        android:layout_marginTop="@dimen/listSpacing"
-        android:textSize="@dimen/bodyTextSize"
-        android:text="TimeSpent" />
+        android:text="Delete Node" />
+
 </LinearLayout>

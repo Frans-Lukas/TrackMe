@@ -25,10 +25,14 @@ public class NodeEntity {
     @ColumnInfo(name = "time")
     private String time;
 
-    public NodeEntity(double latitude, double longitude, String time) {
+    @ColumnInfo(name="address")
+    private String address;
+
+    public NodeEntity(double latitude, double longitude, String time, String address) {
         this.latitude = latitude;
         this.longitude = longitude;
         this.time = time;
+        this.address = address;
     }
 
 
@@ -65,6 +69,14 @@ public class NodeEntity {
 
     public void setPrevID(int prevID) {
         this.prevID = prevID;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+    public String getAddress() {
+        return address;
     }
 
     public String getTime() {

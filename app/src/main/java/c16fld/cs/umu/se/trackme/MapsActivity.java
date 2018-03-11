@@ -88,7 +88,6 @@ public class MapsActivity extends AppCompatActivity
 
         loadPreferences();
 
-
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
         //load nodes and set up database
@@ -106,20 +105,23 @@ public class MapsActivity extends AppCompatActivity
                 getString(R.string.trackMeKey),
                 false);
         try {
-            mTrackInterval = mSharedPref.getInt(
+            mTrackInterval = Integer.parseInt(mSharedPref.getString(
                     getString(R.string.intervalKey),
-                    mTrackInterval)
+                    Integer.toString(mTrackInterval)))
                     * mMinute;
         } catch (ClassCastException e){
-            mTrackInterval = mTrackInterval * mMinute;
+            mTrackInterval = mDefaultTrackInterval * mMinute;
         }
 
         try{
-            mNodeDistance = mSharedPref.getInt(
+            mNodeDistance = Integer.parseInt(mSharedPref.getString(
                     getString(R.string.minDistanceKey),
-                    mNodeDistance);
+                    Integer.toString(mNodeDistance)));
+            Log.d("loadPreferences", "Succes loading pref mNode distance is: " + mNodeDistance);
         } catch (ClassCastException e){
             //cant retrieve value, keep default value;
+            mNodeDistance = mDefaultNodeDistance;
+            Log.e("MapsActivity","Failed to load node distance. " + e);
         }
     }
 
@@ -222,8 +224,9 @@ public class MapsActivity extends AppCompatActivity
     protected void onResume() {
         super.onResume();
         drawTrail();
-
+        loadPreferences();
     }
+
 
     private void drawTrail() {
         ArrayList<LatLng> latLngs = new ArrayList<>();
@@ -249,7 +252,7 @@ public class MapsActivity extends AppCompatActivity
                 }
 
             }
-            Toast.makeText(this, "Added new line with " + latLngs.size() + " nodes.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Added new line with " + latLngs.size() + " nodes. Distance between: " + mNodeDistance, Toast.LENGTH_SHORT).show();
             mMap.addPolyline(new PolylineOptions().addAll(latLngs).color(Color.BLUE));
 
             for (LatLng latLng : latLngs) {
@@ -273,7 +276,8 @@ public class MapsActivity extends AppCompatActivity
                 if(circle.getCenter().latitude == node.getLatitude() &&
                         circle.getCenter().longitude == node.getLongitude()){
                     Toast.makeText(MapsActivity.this, "Clicked on node with lat: " + node.getLatitude() +
-                                            ", long: " + node.getLongitude(), Toast.LENGTH_SHORT).show();
+                                            ", long: " + node.getLongitude() + ", address: " +
+                            node.getAddress(), Toast.LENGTH_SHORT).show();
                     foundMatch = true;
                     break;
                 }
@@ -300,7 +304,6 @@ public class MapsActivity extends AppCompatActivity
     }
 
     private void updateLocationUI() {
-
         if(mMap == null){
             return;
         }

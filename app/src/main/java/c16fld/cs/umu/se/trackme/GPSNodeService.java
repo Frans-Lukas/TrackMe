@@ -6,6 +6,8 @@ import android.arch.persistence.room.Room;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.location.Address;
+import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -17,8 +19,11 @@ import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 import android.widget.Toast;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.List;
+import java.util.Locale;
 
 import c16fld.cs.umu.se.trackme.Database.NodeDB;
 import c16fld.cs.umu.se.trackme.Database.NodeEntity;
@@ -44,8 +49,7 @@ public class GPSNodeService extends Service  {
     private LocationManager mLocationManager;
     private LocationListener mLocationListeners;
     private NodeDB mDataBase;
-
-
+    private Geocoder mGeocoder;
 
     @Override
     public void onCreate() {
@@ -61,6 +65,7 @@ public class GPSNodeService extends Service  {
                 getSystemService(Context.LOCATION_SERVICE);
 
         mLocationListeners = new MyLocationListener();
+        mGeocoder = new Geocoder(this, Locale.getDefault());
 
     }
 
@@ -95,7 +100,8 @@ public class GPSNodeService extends Service  {
                 NodeEntity node = new NodeEntity(
                         location.getLatitude(),
                         location.getLongitude(),
-                        Calendar.getInstance().getTime().toString());
+                        Calendar.getInstance().getTime().toString(),
+                        findAddressFromLocation(location));
 
                 new InsertIntoDatabase(node).execute();
             } else {
@@ -119,6 +125,21 @@ public class GPSNodeService extends Service  {
         public void onProviderDisabled(String s) {
             Log.d(TAG, "onProviderDisabled: " + s);
         }
+    }
+
+    private String findAddressFromLocation(Location location) {
+        try {
+            List<Address> addresses = mGeocoder.getFromLocation(
+                    location.getLatitude(),
+                    location.getLongitude(),
+                    1);
+            if(addresses != null && addresses.size() > 0){
+                return addresses.get(0).getAddressLine(0);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return "";
     }
 
     @Override
@@ -155,7 +176,6 @@ public class GPSNodeService extends Service  {
                         "Database not found. Could not insert.",
                         Toast.LENGTH_LONG).show();
             }
-            //load nodes from database.
             return null;
         }
 
