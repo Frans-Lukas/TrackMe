@@ -31,11 +31,18 @@ import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.Circle;
 import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
 
 import c16fld.cs.umu.se.trackme.Database.NodeDB;
 import c16fld.cs.umu.se.trackme.Database.NodeEntity;
@@ -73,6 +80,9 @@ public class MapsActivity extends AppCompatActivity
 
     private SharedPreferences mSharedPref;
 
+    private ArrayList<Polyline> polylines;
+    private ArrayList<Circle> circles;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -88,6 +98,9 @@ public class MapsActivity extends AppCompatActivity
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
+
+        circles = new ArrayList<>();
+        polylines = new ArrayList<>();
 
         loadPreferences();
 
@@ -210,6 +223,7 @@ public class MapsActivity extends AppCompatActivity
 
             //load nodes from database.
             nodes = (ArrayList<NodeEntity>) mNodeDatabase.nodeDao().getAll();
+            sortNodes(nodes);
             return null;
         }
 
@@ -218,16 +232,49 @@ public class MapsActivity extends AppCompatActivity
             super.onPostExecute(aVoid);
             //draw poly lines on map
             drawTrail();
+            mDataBaseHasBeenSetUp = true;
         }
+    }
 
+    private class LoadNodes extends AsyncTask<Void, Void, Void>{
 
+        @Override
+        protected Void doInBackground(Void... voids) {
+
+            nodes = (ArrayList<NodeEntity>) mNodeDatabase.nodeDao().getAll();
+            sortNodes(nodes);
+            return null;
+        }
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            drawTrail();
+        }
+    }
+
+    private void sortNodes(ArrayList<NodeEntity> nodes) {
+        Collections.sort(nodes, new Comparator<NodeEntity>() {
+            @Override
+            public int compare(NodeEntity entity1, NodeEntity entity2) {
+                //Need to keep a standard date format to allow parsing.
+                @SuppressLint("SimpleDateFormat") DateFormat sdf =
+                        new SimpleDateFormat(getString(R.string.dateFormat));
+                try {
+                    Date d1 = sdf.parse(entity1.getTime());
+                    Date d2 = sdf.parse(entity2.getTime());
+                    return d1.compareTo(d2);
+                } catch (ParseException e) {
+                    e.printStackTrace();
+                }
+                return 1;
+            }
+        });
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        drawTrail();
         loadPreferences();
+        new LoadNodes().execute();
     }
 
 
@@ -255,19 +302,51 @@ public class MapsActivity extends AppCompatActivity
                 }
 
             }
-            Toast.makeText(this, "Added new line with " + latLngs.size() + " nodes. Distance between: " + mNodeDistance, Toast.LENGTH_SHORT).show();
-            mMap.addPolyline(new PolylineOptions().addAll(latLngs).color(Color.BLUE));
+            polylines.add(mMap.addPolyline(new PolylineOptions().addAll(latLngs).color(Color.BLUE)));
 
             for (LatLng latLng : latLngs) {
-                mMap.addCircle(new CircleOptions()
+                circles.add(mMap.addCircle(new CircleOptions()
                         .center(latLng)
                         .radius(NODE_CIRCLE_RADIUS)
                         .fillColor(Color.BLUE)
                         .strokeColor(Color.BLUE)
-                        .clickable(true));
+                        .clickable(true)));
             }
 
             mMap.setOnCircleClickListener(new MyOnCircleClickListener());
+            mMap.setOnMapLongClickListener(new MyCircleRemovalListener());
+        }
+    }
+
+    private void clearLinesAndCircles(){
+        for (Polyline polyline : polylines) {
+            polyline.remove();
+        }
+        polylines = new ArrayList<>();
+        for (Circle circle : circles) {
+            circle.remove();
+        }
+        circles = new ArrayList<>();
+    }
+
+    private class MyCircleRemovalListener implements GoogleMap.OnMapLongClickListener{
+
+        @Override
+        public void onMapLongClick(LatLng latLng) {
+            for (NodeEntity node : nodes) {
+                float[] distance = new float[2];
+                Location.distanceBetween(latLng.latitude, latLng.longitude, node.getLatitude(), node.getLongitude(), distance);
+                if(distance[0] < NODE_CIRCLE_RADIUS){
+                    new DeleteFromDatabase(node).execute();
+                    nodes.remove(node);
+                    clearLinesAndCircles();
+                    new LoadNodes().execute();
+
+                    Toast.makeText(MapsActivity.this, "Removed node", Toast.LENGTH_SHORT).show();
+
+                    break;
+                }
+            }
         }
     }
 
@@ -353,6 +432,21 @@ public class MapsActivity extends AppCompatActivity
             }
         } catch(SecurityException e)  {
             Log.e("Exception: %s", e.getMessage());
+        }
+    }
+
+    private class DeleteFromDatabase extends AsyncTask<Void, Void, Void> {
+        private NodeEntity entityToDelete;
+        public DeleteFromDatabase(NodeEntity entityToInsert) {
+            this.entityToDelete = entityToInsert;
+        }
+
+        @Override
+        protected Void doInBackground(Void... voids) {
+            if(mDataBaseHasBeenSetUp) {
+                mNodeDatabase.nodeDao().delete(entityToDelete);
+            }
+            return null;
         }
     }
 

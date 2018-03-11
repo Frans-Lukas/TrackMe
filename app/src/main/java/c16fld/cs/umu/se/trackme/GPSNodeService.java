@@ -1,6 +1,7 @@
 package c16fld.cs.umu.se.trackme;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.Service;
 import android.arch.persistence.room.Room;
 import android.content.Context;
@@ -20,6 +21,7 @@ import android.util.Log;
 import android.widget.Toast;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
@@ -97,10 +99,13 @@ public class GPSNodeService extends Service  {
         @Override
         public void onLocationChanged(Location location) {
             if(location != null && uniqueIdFound) {
+                //Need to keep a standard date format to allow parsing.
+                @SuppressLint("SimpleDateFormat") SimpleDateFormat df =
+                        new SimpleDateFormat(getString(R.string.dateFormat));
                 NodeEntity node = new NodeEntity(
                         location.getLatitude(),
                         location.getLongitude(),
-                        Calendar.getInstance().getTime().toString(),
+                        df.format(Calendar.getInstance().getTime()),
                         findAddressFromLocation(location));
 
                 new InsertIntoDatabase(node).execute();
