@@ -40,8 +40,8 @@ public class GPSNodeService extends Service  {
     private static final int mSecond = 1000;
     private static final int mMinute = mSecond * 60;
 
-    private int mTrackTime = mMinute * 10;
-    private int mMinDistance = 200;
+    private int mTrackTime = mMinute * MapsActivity.DEFAULT_TRACK_INTERVAL;
+    private int mMinDistance = MapsActivity.DEFAULT_NODE_DISTANCE;
 
     private int lastUsedID = 0;
 
@@ -73,8 +73,10 @@ public class GPSNodeService extends Service  {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        mTrackTime = intent.getIntExtra(getString(R.string.intervalKey), mTrackTime);
-        mMinDistance = intent.getIntExtra(getString(R.string.minDistanceKey), mMinDistance);
+        if(intent != null){
+            mTrackTime = intent.getIntExtra(getString(R.string.intervalKey), mTrackTime);
+            mMinDistance = intent.getIntExtra(getString(R.string.minDistanceKey), mMinDistance);
+        }
 
         checkFineLocationPermission();
         mLocationManager.requestLocationUpdates(

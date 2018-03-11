@@ -51,15 +51,19 @@ public class MapsActivity extends AppCompatActivity
                             implements OnMapReadyCallback{
 
     private static final int DEFAULT_ZOOM = 15;
+
     private static final int PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1;
+
     private static final String KEY_CAMERA_POSITION = "camera_position";
     private static final String KEY_LOCATION = "location";
-    private static final float NODE_CIRCLE_RADIUS = 4.0f;
+    private static final float NODE_CIRCLE_RADIUS = 6.0f;
     private static final int mSecond = 1000;
     private static final int mMinute = mSecond * 60;
 
     public static final String ADDRESS_KEY = "address";
     public static final String TIME_KEY = "time";
+    public static int DEFAULT_TRACK_INTERVAL = 10;
+    public static int DEFAULT_NODE_DISTANCE = 100;
 
     private GoogleMap mMap;
     private FusedLocationProviderClient mFusedLocationClient;
@@ -69,9 +73,7 @@ public class MapsActivity extends AppCompatActivity
 
     private boolean mShouldTrackUser = false;
     private int mTrackInterval = 10;
-    private int mDefaultTrackInterval = 10;
     private int mNodeDistance = 100;
-    private int mDefaultNodeDistance = 100;
 
     private NodeDB mNodeDatabase;
     private ArrayList<NodeEntity> nodes = null;
@@ -126,7 +128,7 @@ public class MapsActivity extends AppCompatActivity
                     Integer.toString(mTrackInterval)))
                     * mMinute;
         } catch (ClassCastException e){
-            mTrackInterval = mDefaultTrackInterval * mMinute;
+            mTrackInterval = DEFAULT_TRACK_INTERVAL * mMinute;
         }
 
         try{
@@ -136,7 +138,7 @@ public class MapsActivity extends AppCompatActivity
             Log.d("loadPreferences", "Succes loading pref mNode distance is: " + mNodeDistance);
         } catch (ClassCastException e){
             //cant retrieve value, keep default value;
-            mNodeDistance = mDefaultNodeDistance;
+            mNodeDistance = DEFAULT_NODE_DISTANCE;
             Log.e("MapsActivity","Failed to load node distance. " + e);
         }
     }
@@ -166,8 +168,8 @@ public class MapsActivity extends AppCompatActivity
 
     private void startLocationService() {
         Intent intent = new Intent(this, GPSNodeService.class);
-        intent.putExtra(getString(R.string.intervalKey), mDefaultTrackInterval);
-        intent.putExtra(getString(R.string.minDistanceKey), mDefaultNodeDistance);
+        intent.putExtra(getString(R.string.intervalKey), DEFAULT_TRACK_INTERVAL);
+        intent.putExtra(getString(R.string.minDistanceKey), DEFAULT_NODE_DISTANCE);
         startService(intent);
     }
 
@@ -240,7 +242,6 @@ public class MapsActivity extends AppCompatActivity
 
         @Override
         protected Void doInBackground(Void... voids) {
-
             nodes = (ArrayList<NodeEntity>) mNodeDatabase.nodeDao().getAll();
             sortNodes(nodes);
             return null;
