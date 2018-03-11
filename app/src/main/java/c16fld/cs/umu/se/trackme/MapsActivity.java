@@ -35,6 +35,9 @@ import com.google.android.gms.tasks.Task;
 
 import java.util.ArrayList;
 
+import c16fld.cs.umu.se.trackme.Database.NodeDB;
+import c16fld.cs.umu.se.trackme.Database.NodeEntity;
+
 public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback {
 
     public static final int DEFAULT_ZOOM = 15;

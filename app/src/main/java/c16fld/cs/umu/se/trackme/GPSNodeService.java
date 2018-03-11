@@ -20,6 +20,9 @@ import android.widget.Toast;
 import java.util.ArrayList;
 import java.util.Calendar;
 
+import c16fld.cs.umu.se.trackme.Database.NodeDB;
+import c16fld.cs.umu.se.trackme.Database.NodeEntity;
+
 import static android.content.ContentValues.TAG;
 
 /**

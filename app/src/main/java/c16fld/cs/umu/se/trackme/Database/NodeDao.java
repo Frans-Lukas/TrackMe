@@ -1,4 +1,4 @@
-package c16fld.cs.umu.se.trackme;
+package c16fld.cs.umu.se.trackme.Database;
 
 import android.arch.persistence.room.Dao;
 import android.arch.persistence.room.Delete;
