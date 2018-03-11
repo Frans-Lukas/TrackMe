@@ -1,4 +1,6 @@
 <resources>
     <dimen name="fab_margin">16dp</dimen>
     <dimen name="edgeStandardMargin">16dp</dimen>
+    <dimen name="bodyTextSize">16dp</dimen>
+    <dimen name="listSpacing">8dp</dimen>
 </resources>

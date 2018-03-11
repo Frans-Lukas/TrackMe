@@ -93,8 +93,10 @@ public class MapsActivity extends AppCompatActivity
 
         //load nodes and set up database
         new DataBaseSetUp().execute();
-
-        startLocationService();
+        
+        if(mShouldTrackUser) {
+            startLocationService();
+        }
     }
 
     private void loadPreferences() {
@@ -222,7 +224,7 @@ public class MapsActivity extends AppCompatActivity
         drawTrail();
 
     }
-    
+
     private void drawTrail() {
         ArrayList<LatLng> latLngs = new ArrayList<>();
         if(nodes != null && nodes.size() > 0 && mMap != null) {

@@ -39,15 +39,18 @@
         </activity>
         <activity
             android:name=".SettingsActivity"
-            android:parentActivityName=".MapsActivity" >
-
+            android:parentActivityName=".MapsActivity">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value=".MapsActivity" />
-
         </activity>
-
-
+        <activity
+            android:name=".LocationInformation"
+            android:parentActivityName=".MapsActivity">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".MapsActivity" />
+        </activity>
     </application>
 
 </manifest>
