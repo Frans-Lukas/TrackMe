@@ -41,8 +41,7 @@ import c16fld.cs.umu.se.trackme.Database.NodeDB;
 import c16fld.cs.umu.se.trackme.Database.NodeEntity;
 
 public class MapsActivity extends AppCompatActivity
-                            implements OnMapReadyCallback,
-        SharedPreferences.OnSharedPreferenceChangeListener{
+                            implements OnMapReadyCallback{
 
     public static final int DEFAULT_ZOOM = 15;
     private static final int PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1;
@@ -188,22 +187,6 @@ public class MapsActivity extends AppCompatActivity
         }
     }
 
-    @Override
-    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String s) {
-        if(s.equals(getString(R.string.trackMeKey))){
-            mShouldTrackUser = mSharedPref.getBoolean(getString(R.string.trackMeKey), false);
-        } else if(s.equals(getString(R.string.intervalKey))){
-            mTrackInterval = mSharedPref.getInt(
-                    getString(R.string.intervalKey),
-                    mDefaultTrackInterval)
-                    * mMinute;
-        } else if(s.equals(getString(R.string.minDistanceKey))){
-            mNodeDistance = mSharedPref.getInt(
-                    getString(R.string.minDistanceKey),
-                    mDefaultNodeDistance);
-        }
-    }
-
     private class DataBaseSetUp extends AsyncTask<Void, Void, Void>{
         public DataBaseSetUp() {
             super();
@@ -239,7 +222,7 @@ public class MapsActivity extends AppCompatActivity
         drawTrail();
 
     }
-
+    
     private void drawTrail() {
         ArrayList<LatLng> latLngs = new ArrayList<>();
         if(nodes != null && nodes.size() > 0 && mMap != null) {
