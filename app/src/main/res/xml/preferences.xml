@@ -7,17 +7,19 @@
         android:key="@string/minDistanceKey"
         android:selectAllOnFocus="true"
         android:numeric="integer"
+        android:maxLength="8"
         android:singleLine="true"
         android:title="@string/settingsMinDistanceTitle"
-        android:summary="@string/settingsMinDistanceSummary"/>
+        android:summary="@string/defaultIntervalSettingsValue"/>
     <EditTextPreference
         android:defaultValue="@string/defaultIntervalSettingsValue"
         android:key="@string/intervalKey"
         android:selectAllOnFocus="true"
         android:numeric="integer"
+        android:maxLength="4"
         android:singleLine="true"
         android:title="@string/settingsIntervalTitle"
-        android:summary="@string/settingsIntervalSummary"/>
+        android:summary="@string/defaultIntervalSettingsValue"/>
     <SwitchPreference
         android:defaultValue="true"
         android:key="@string/trackMeKey"

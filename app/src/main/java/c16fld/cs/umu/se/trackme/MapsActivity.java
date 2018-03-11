@@ -40,7 +40,9 @@ import java.util.ArrayList;
 import c16fld.cs.umu.se.trackme.Database.NodeDB;
 import c16fld.cs.umu.se.trackme.Database.NodeEntity;
 
-public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback {
+public class MapsActivity extends AppCompatActivity
+                            implements OnMapReadyCallback,
+        SharedPreferences.OnSharedPreferenceChangeListener{
 
     public static final int DEFAULT_ZOOM = 15;
     private static final int PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1;
@@ -58,7 +60,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     private boolean mShouldTrackUser = false;
     private int mTrackInterval = 10;
+    private int mDefaultTrackInterval = 10;
     private int mNodeDistance = 100;
+    private int mDefaultNodeDistance = 100;
 
     private NodeDB mNodeDatabase;
     private ArrayList<NodeEntity> nodes = null;
@@ -95,18 +99,27 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     private void loadPreferences() {
-        mSharedPref = PreferenceManager.getDefaultSharedPreferences(this);
         PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
+        mSharedPref = PreferenceManager.getDefaultSharedPreferences(this);
         mShouldTrackUser = mSharedPref.getBoolean(
-                SettingsActivity.KEY_SHOULD_TRACK_PREFERENCE,
+                getString(R.string.trackMeKey),
                 false);
-        mTrackInterval = mSharedPref.getInt(
-                SettingsActivity.KEY_INTERVAL_PREFERENCE,
-                mTrackInterval)
-                * mMinute;
-        mNodeDistance = mSharedPref.getInt(
-                SettingsActivity.KEY_MIN_DISTANCE_PREFERENCE,
-                mNodeDistance);
+        try {
+            mTrackInterval = mSharedPref.getInt(
+                    getString(R.string.intervalKey),
+                    mTrackInterval)
+                    * mMinute;
+        } catch (ClassCastException e){
+            mTrackInterval = mTrackInterval * mMinute;
+        }
+
+        try{
+            mNodeDistance = mSharedPref.getInt(
+                    getString(R.string.minDistanceKey),
+                    mNodeDistance);
+        } catch (ClassCastException e){
+            //cant retrieve value, keep default value;
+        }
     }
 
     @Override
@@ -134,8 +147,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     private void startLocationService() {
         Intent intent = new Intent(this, GPSNodeService.class);
-        intent.putExtra(getString(R.string.intervalKey), mTrackInterval);
-        intent.putExtra(getString(R.string.minDistanceKey), mNodeDistance);
+        intent.putExtra(getString(R.string.intervalKey), mDefaultTrackInterval);
+        intent.putExtra(getString(R.string.minDistanceKey), mDefaultNodeDistance);
         startService(intent);
     }
 
@@ -175,6 +188,22 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
     }
 
+    @Override
+    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String s) {
+        if(s.equals(getString(R.string.trackMeKey))){
+            mShouldTrackUser = mSharedPref.getBoolean(getString(R.string.trackMeKey), false);
+        } else if(s.equals(getString(R.string.intervalKey))){
+            mTrackInterval = mSharedPref.getInt(
+                    getString(R.string.intervalKey),
+                    mDefaultTrackInterval)
+                    * mMinute;
+        } else if(s.equals(getString(R.string.minDistanceKey))){
+            mNodeDistance = mSharedPref.getInt(
+                    getString(R.string.minDistanceKey),
+                    mDefaultNodeDistance);
+        }
+    }
+
     private class DataBaseSetUp extends AsyncTask<Void, Void, Void>{
         public DataBaseSetUp() {
             super();
@@ -191,8 +220,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
             //load nodes from database.
             nodes = (ArrayList<NodeEntity>) mNodeDatabase.nodeDao().getAll();
-
-
             return null;
         }
 
@@ -210,6 +237,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     protected void onResume() {
         super.onResume();
         drawTrail();
+
     }
 
     private void drawTrail() {
