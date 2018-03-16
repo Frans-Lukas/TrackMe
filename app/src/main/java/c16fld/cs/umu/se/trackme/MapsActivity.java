@@ -51,9 +51,7 @@ public class MapsActivity extends AppCompatActivity
                             implements OnMapReadyCallback{
 
     private static final int DEFAULT_ZOOM = 15;
-
     private static final int PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1;
-
     private static final String KEY_CAMERA_POSITION = "camera_position";
     private static final String KEY_LOCATION = "location";
     private static final float NODE_CIRCLE_RADIUS = 6.0f;
@@ -89,6 +87,7 @@ public class MapsActivity extends AppCompatActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        //restore lastKnownLocation and cameraPostion if restart of app happens.
         if(savedInstanceState != null){
             mLastKnownLocation = savedInstanceState.getParcelable(KEY_LOCATION);
             mCameraPosition = savedInstanceState.getParcelable(KEY_CAMERA_POSITION);
@@ -106,19 +105,27 @@ public class MapsActivity extends AppCompatActivity
 
         loadPreferences();
 
+        //Set up location client.
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
         //load nodes and set up database
         new DataBaseSetUp().execute();
-        
+
+        //If user has set to not be tracked, don't start service.
         if(mShouldTrackUser) {
             startLocationService();
         }
     }
 
+    /**
+     * Load preferences.
+     */
     private void loadPreferences() {
         PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
+        //Get preference object loader
         mSharedPref = PreferenceManager.getDefaultSharedPreferences(this);
+
+        //Load settings.
         mShouldTrackUser = mSharedPref.getBoolean(
                 getString(R.string.trackMeKey),
                 false);
@@ -128,6 +135,7 @@ public class MapsActivity extends AppCompatActivity
                     Integer.toString(mTrackInterval)))
                     * mMinute;
         } catch (ClassCastException e){
+            //Settings somehow set to non numeric value. Use defaults.
             mTrackInterval = DEFAULT_TRACK_INTERVAL * mMinute;
         }
 
@@ -135,14 +143,19 @@ public class MapsActivity extends AppCompatActivity
             mNodeDistance = Integer.parseInt(mSharedPref.getString(
                     getString(R.string.minDistanceKey),
                     Integer.toString(mNodeDistance)));
-            Log.d("loadPreferences", "Succes loading pref mNode distance is: " + mNodeDistance);
+            Log.d("loadPreferences", "Success loading pref mNode distance is: " + mNodeDistance);
         } catch (ClassCastException e){
-            //cant retrieve value, keep default value;
+            //Settings somehow set to non numeric value. Use defaults.
             mNodeDistance = DEFAULT_NODE_DISTANCE;
             Log.e("MapsActivity","Failed to load node distance. " + e);
         }
     }
 
+    /**
+     * Set up the menu bar
+     * @param menu
+     * @return
+     */
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
@@ -150,6 +163,12 @@ public class MapsActivity extends AppCompatActivity
         return true;
     }
 
+
+    /**
+     * React to user selection of menu bar item.
+     * @param item
+     * @return
+     */
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()){
@@ -161,18 +180,28 @@ public class MapsActivity extends AppCompatActivity
         }
     }
 
+    /**
+     * Go to the settings menu.
+     */
     private void goToSettingsMenu() {
         Intent intent = new Intent(this, SettingsActivity.class);
         startActivity(intent);
     }
 
+    /**
+     * Start the location service that will track the user.
+     */
     private void startLocationService() {
         Intent intent = new Intent(this, GPSNodeService.class);
-        intent.putExtra(getString(R.string.intervalKey), DEFAULT_TRACK_INTERVAL);
-        intent.putExtra(getString(R.string.minDistanceKey), DEFAULT_NODE_DISTANCE);
+        intent.putExtra(getString(R.string.intervalKey), mTrackInterval);
+        intent.putExtra(getString(R.string.minDistanceKey), mNodeDistance);
         startService(intent);
     }
 
+    /**
+     * Set up map ui.
+     * @param googleMap
+     */
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
@@ -181,12 +210,25 @@ public class MapsActivity extends AppCompatActivity
         setCameraPosition();
     }
 
+
     private void setCameraPosition() {
         if(mCameraPosition != null){
             mMap.moveCamera(CameraUpdateFactory.newCameraPosition(mCameraPosition));
+        } else if(mDataBaseHasBeenSetUp
+                && nodes != null
+                && nodes.size() > 0){
+            //Set location to last recorded database location.
+            LatLng location = new LatLng(
+                    nodes.get(nodes.size() - 1).getLatitude(),
+                    nodes.get(nodes.size() - 1).getLongitude());
+            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(location, DEFAULT_ZOOM));
         }
     }
 
+    /**
+     * Save camera position and last known location.
+     * @param outState
+     */
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
@@ -197,6 +239,9 @@ public class MapsActivity extends AppCompatActivity
         }
     }
 
+    /**
+     * Check and ask for fine location access.
+     */
     private void checkFineLocationPermission() {
         if (ActivityCompat.checkSelfPermission(this,
                 Manifest.permission.ACCESS_FINE_LOCATION) !=
@@ -209,6 +254,9 @@ public class MapsActivity extends AppCompatActivity
         }
     }
 
+    /**
+     * Set up database on seperate thread.
+     */
     private class DataBaseSetUp extends AsyncTask<Void, Void, Void>{
         public DataBaseSetUp() {
             super();
@@ -238,6 +286,9 @@ public class MapsActivity extends AppCompatActivity
         }
     }
 
+    /**
+     * Load nodes from database.
+     */
     private class LoadNodes extends AsyncTask<Void, Void, Void>{
 
         @Override
@@ -252,6 +303,11 @@ public class MapsActivity extends AppCompatActivity
         }
     }
 
+    /**
+     * Sort nodes based on date in a specific format. If incorrect format, order
+     * will be according to database ordering.
+     * @param nodes
+     */
     private void sortNodes(ArrayList<NodeEntity> nodes) {
         Collections.sort(nodes, new Comparator<NodeEntity>() {
             @Override
@@ -264,47 +320,81 @@ public class MapsActivity extends AppCompatActivity
                     Date d2 = sdf.parse(entity2.getTime());
                     return d1.compareTo(d2);
                 } catch (ParseException e) {
-                    e.printStackTrace();
+                    Log.e("sortNodes", "Invalid date format.");
                 }
                 return 1;
             }
         });
     }
 
+    /**
+     * Load preferences and set position.
+     */
     @Override
     protected void onResume() {
         super.onResume();
         loadPreferences();
+        setCameraPosition();
         new LoadNodes().execute();
     }
 
-
+    /**
+     * Draw trail on map according to distance between nodes.
+     * As well as circles around nodes.
+     */
     private void drawTrail() {
         ArrayList<LatLng> latLngs = new ArrayList<>();
         if(nodes != null && nodes.size() > 0 && mMap != null) {
-            for (NodeEntity node : nodes) {
-                LatLng newNode = new LatLng(node.getLatitude(), node.getLongitude());
-                if (latLngs.size() > 0) {
-                    //don't add nodes that are close to each other to the poly line.
-                    LatLng prevNode = latLngs.get(latLngs.size() - 1);
-                    Location prevLocation = new Location(LocationManager.GPS_PROVIDER);
-                    prevLocation.setLatitude(prevNode.latitude);
-                    prevLocation.setLongitude(prevNode.longitude);
+            //Only record nodes within a specific distance between each other.
 
-                    Location newLocation = new Location(LocationManager.GPS_PROVIDER);
-                    newLocation.setLatitude(newNode.latitude);
-                    newLocation.setLongitude(newNode.longitude);
+            getNodesToDraw(latLngs);
 
-                    if (newLocation.distanceTo(prevLocation) > mNodeDistance) {
-                        latLngs.add(newNode);
-                    }
-                } else {
-                    latLngs.add(newNode);
-                }
-
-            }
             polylines.add(mMap.addPolyline(new PolylineOptions().addAll(latLngs).color(Color.BLUE)));
 
+            drawCircles(latLngs);
+
+            //Add click listeners.
+            mMap.setOnCircleClickListener(new MyOnCircleClickListener());
+            mMap.setOnMapLongClickListener(new MyCircleRemovalListener());
+        }
+    }
+
+    /**
+     * Finds all nodes that are a specific distance between each other and adds them to the
+     * latLngs list.
+     * @param latLngs The nodes to check if they are the distance between each other,
+     */
+    private void getNodesToDraw(ArrayList<LatLng> latLngs) {
+        for (NodeEntity node : nodes) {
+            LatLng newNode = new LatLng(node.getLatitude(), node.getLongitude());
+            if (latLngs.size() > 0) {
+                //don't add nodes that are close to each other.
+                LatLng prevNode = latLngs.get(latLngs.size() - 1);
+
+                //Create location objects for easier distance checking.
+                Location prevLocation = new Location(LocationManager.GPS_PROVIDER);
+                prevLocation.setLatitude(prevNode.latitude);
+                prevLocation.setLongitude(prevNode.longitude);
+
+                Location newLocation = new Location(LocationManager.GPS_PROVIDER);
+                newLocation.setLatitude(newNode.latitude);
+                newLocation.setLongitude(newNode.longitude);
+
+                if (newLocation.distanceTo(prevLocation) > mNodeDistance) {
+                    latLngs.add(newNode);
+                }
+            } else {
+                latLngs.add(newNode);
+            }
+        }
+    }
+
+    /**
+     * Draw circles on locations recorded.
+     * @param latLngs
+     */
+    private void drawCircles(ArrayList<LatLng> latLngs) {
+        if(latLngs.size() > 0) {
             for (LatLng latLng : latLngs) {
                 circles.add(mMap.addCircle(new CircleOptions()
                         .center(latLng)
@@ -312,13 +402,14 @@ public class MapsActivity extends AppCompatActivity
                         .fillColor(Color.BLUE)
                         .strokeColor(Color.BLUE)
                         .clickable(true)));
-            }
 
-            mMap.setOnCircleClickListener(new MyOnCircleClickListener());
-            mMap.setOnMapLongClickListener(new MyCircleRemovalListener());
+            }
         }
     }
 
+    /**
+     * clear all circles and lines drawn on map.
+     */
     private void clearLinesAndCircles(){
         for (Polyline polyline : polylines) {
             polyline.remove();
@@ -330,19 +421,27 @@ public class MapsActivity extends AppCompatActivity
         circles = new ArrayList<>();
     }
 
+
+    /**
+     * A long click listener for the circles on the map. This listener
+     * will remove all circles long clicked on. Both from the map and the database.
+     */
     private class MyCircleRemovalListener implements GoogleMap.OnMapLongClickListener{
 
         @Override
         public void onMapLongClick(LatLng latLng) {
+            //Find the node the user clicked on, if it exists.
             for (NodeEntity node : nodes) {
                 float[] distance = new float[2];
                 Location.distanceBetween(latLng.latitude, latLng.longitude, node.getLatitude(), node.getLongitude(), distance);
+                //Remove the node if the user clicks on it.
                 if(distance[0] < NODE_CIRCLE_RADIUS){
                     new DeleteFromDatabase(node).execute();
                     nodes.remove(node);
                     clearLinesAndCircles();
                     new LoadNodes().execute();
 
+                    //Tell the user the node was removed.
                     Toast.makeText(MapsActivity.this, "Removed node", Toast.LENGTH_SHORT).show();
 
                     break;
@@ -351,10 +450,14 @@ public class MapsActivity extends AppCompatActivity
         }
     }
 
+    /**
+     * A circle listener for opening information about the clicked node.
+     */
     private class MyOnCircleClickListener implements GoogleMap.OnCircleClickListener{
         @Override
         public void onCircleClick(Circle circle) {
             boolean foundMatch = false;
+            //Find the circle the user clicked on.
             for (NodeEntity node : nodes) {
                 if(circle.getCenter().latitude == node.getLatitude() &&
                         circle.getCenter().longitude == node.getLongitude()){
@@ -362,17 +465,21 @@ public class MapsActivity extends AppCompatActivity
                     intent.putExtra(ADDRESS_KEY, node.getAddress());
                     intent.putExtra(TIME_KEY, node.getTime());
                     startActivity(intent);
+                    //For debugging if the node was not found.
                     foundMatch = true;
                     break;
                 }
             }
-            if(!foundMatch) {
-                Toast.makeText(MapsActivity.this, "Could not find node.", Toast.LENGTH_SHORT).show();
-            }
         }
     }
 
-
+    /**
+     * When the user gives permission to the app to track location, update the ui to the
+     * current location.
+     * @param requestCode
+     * @param permissions
+     * @param grantResults
+     */
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         mLocationPermissionGranted = false;
@@ -387,11 +494,15 @@ public class MapsActivity extends AppCompatActivity
         updateLocationUI();
     }
 
+    /**
+     * Update the location ui.
+     */
     private void updateLocationUI() {
         if(mMap == null){
             return;
         }
         try{
+            //Enable or disable location button.
             if(mLocationPermissionGranted){
                 mMap.setMyLocationEnabled(true);
                 mMap.getUiSettings().setMyLocationButtonEnabled(true);
@@ -406,6 +517,9 @@ public class MapsActivity extends AppCompatActivity
         }
     }
 
+    /**
+     * get the last known location.
+     */
     private void getDeviceLocation() {
         try{
             if(mLocationPermissionGranted){
@@ -436,6 +550,9 @@ public class MapsActivity extends AppCompatActivity
         }
     }
 
+    /**
+     * Delete the given node from the database.
+     */
     private class DeleteFromDatabase extends AsyncTask<Void, Void, Void> {
         private NodeEntity entityToDelete;
         public DeleteFromDatabase(NodeEntity entityToInsert) {

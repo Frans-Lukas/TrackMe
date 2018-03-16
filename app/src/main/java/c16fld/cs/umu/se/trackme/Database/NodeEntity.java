@@ -34,11 +34,7 @@ public class NodeEntity {
         this.time = time;
         this.address = address;
     }
-
-
-    public NodeEntity() {
-    }
-
+    
     public int getId() {
         return id;
     }

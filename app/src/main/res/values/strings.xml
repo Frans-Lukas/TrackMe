@@ -90,4 +90,5 @@
     <string name="pref_title_vibrate">Vibrate</string>
     <string name="invalid_lat_long_used">Invalid lat long used.</string>
     <string name="dateFormat">yyyy-MM-dd HH:mm</string>
+    <string name="LocationInfoActivtyTitle">Location Info</string>
 </resources>

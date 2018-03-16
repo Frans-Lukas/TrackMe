@@ -24,7 +24,7 @@ public class LocationInformationActivity extends AppCompatActivity {
         setContentView(R.layout.activity_location_information);
 
         //Enable action bar and home button.
-        setTitle("Location Info");
+        setTitle(getString(R.string.LocationInfoActivtyTitle));
         ActionBar ab = getSupportActionBar();
         ab.setDisplayHomeAsUpEnabled(true);
 
