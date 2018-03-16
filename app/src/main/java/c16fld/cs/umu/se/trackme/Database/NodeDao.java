@@ -8,9 +8,8 @@ import android.arch.persistence.room.Query;
 import java.util.List;
 
 /**
- * Created by Frans-Lukas on 2018-03-05.
+ * Database access object that can insert, delete and get data from the database.
  */
-
 @Dao
 public interface NodeDao {
 

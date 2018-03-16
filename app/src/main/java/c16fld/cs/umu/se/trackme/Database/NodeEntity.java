@@ -5,9 +5,8 @@ import android.arch.persistence.room.Entity;
 import android.arch.persistence.room.PrimaryKey;
 
 /**
- * Created by Frans-Lukas on 2018-03-05.
+ * Entity used to store node information in a room database.
  */
-
 @Entity
 public class NodeEntity {
     @PrimaryKey(autoGenerate =  true)
@@ -34,7 +33,7 @@ public class NodeEntity {
         this.time = time;
         this.address = address;
     }
-    
+
     public int getId() {
         return id;
     }

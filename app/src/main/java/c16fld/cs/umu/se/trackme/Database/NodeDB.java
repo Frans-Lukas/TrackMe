@@ -4,9 +4,8 @@ import android.arch.persistence.room.Database;
 import android.arch.persistence.room.RoomDatabase;
 
 /**
- * Created by Frans-Lukas on 2018-03-05.
+ * The Room persistance library database object.
  */
-
 @Database(entities = {NodeEntity.class}, version = 4)
 public abstract class NodeDB extends RoomDatabase{
     public abstract NodeDao nodeDao();

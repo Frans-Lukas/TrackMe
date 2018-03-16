@@ -60,11 +60,16 @@ public class GPSNodeService extends Service  {
         mDatabaseIsSetUp = false;
         mUniqueIdFound = false;
 
+        //Setup locationManager via gps.
         mLocationManager = (LocationManager)
                 getApplicationContext().
                 getSystemService(Context.LOCATION_SERVICE);
 
+
         mLocationListeners = new MyLocationListener();
+        /*geocoder used to get address information from a location given by the
+         * Location listener.
+        */
         mGeocoder = new Geocoder(this, Locale.getDefault());
     }
 

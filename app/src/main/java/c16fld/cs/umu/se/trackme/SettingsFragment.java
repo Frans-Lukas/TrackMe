@@ -1,18 +1,11 @@
 package c16fld.cs.umu.se.trackme;
 
-import android.arch.persistence.room.Room;
 import android.content.SharedPreferences;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.preference.Preference;
 import android.preference.PreferenceFragment;
 import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
-
-import java.util.List;
-
-import c16fld.cs.umu.se.trackme.Database.NodeDB;
-import c16fld.cs.umu.se.trackme.Database.NodeEntity;
 
 /**
  * Created by Frans-Lukas on 2018-03-11.
@@ -56,32 +49,5 @@ public class SettingsFragment extends PreferenceFragment implements SharedPrefer
                 .unregisterOnSharedPreferenceChangeListener(this);
 
     }
-
-    private class DataBaseSetUp extends AsyncTask<Void, Void, Void> {
-        NodeDB mNodeDatabase;
-
-        @Override
-        protected Void doInBackground(Void... voids) {
-            NodeDB mNodeDatabase = Room.databaseBuilder(
-                    getActivity().getApplicationContext(),
-                    NodeDB.class,
-                    getString(R.string.database_name))
-                    .fallbackToDestructiveMigration()
-                    .build();
-
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(Void aVoid) {
-            super.onPostExecute(aVoid);
-            //draw poly lines on map
-            List<NodeEntity> allNodes = mNodeDatabase.nodeDao().getAll();
-            for (NodeEntity node : allNodes) {
-                mNodeDatabase.nodeDao().delete(node);
-            }
-        }
-    }
-
 
 }
