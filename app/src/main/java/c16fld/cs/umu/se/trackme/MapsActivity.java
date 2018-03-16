@@ -358,7 +358,7 @@ public class MapsActivity extends AppCompatActivity
             for (NodeEntity node : nodes) {
                 if(circle.getCenter().latitude == node.getLatitude() &&
                         circle.getCenter().longitude == node.getLongitude()){
-                    Intent intent = new Intent(MapsActivity.this, LocationInformation.class);
+                    Intent intent = new Intent(MapsActivity.this, LocationInformationActivity.class);
                     intent.putExtra(ADDRESS_KEY, node.getAddress());
                     intent.putExtra(TIME_KEY, node.getTime());
                     startActivity(intent);

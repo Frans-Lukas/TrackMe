@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    tools:context="c16fld.cs.umu.se.trackme.LocationInformation">
+    tools:context="c16fld.cs.umu.se.trackme.LocationInformationActivity">
 
     <TextView
         android:id="@+id/textViewAddress"
