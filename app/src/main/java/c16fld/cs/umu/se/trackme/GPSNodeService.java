@@ -22,7 +22,6 @@ import android.widget.Toast;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
@@ -32,10 +31,10 @@ import c16fld.cs.umu.se.trackme.Database.NodeEntity;
 
 import static android.content.ContentValues.TAG;
 
-/**
- * Created by Frans-Lukas on 2018-03-05.
- */
 
+/**
+ * Tracking service that stores the users location to the databse.
+ */
 public class GPSNodeService extends Service  {
     private static final int mSecond = 1000;
     private static final int mMinute = mSecond * 60;
@@ -43,10 +42,8 @@ public class GPSNodeService extends Service  {
     private int mTrackTime = mMinute * MapsActivity.DEFAULT_TRACK_INTERVAL;
     private int mMinDistance = MapsActivity.DEFAULT_NODE_DISTANCE;
 
-    private int lastUsedID = 0;
-
-    private boolean databaseIsSetUp = false;
-    private boolean uniqueIdFound = false;
+    private boolean mDatabaseIsSetUp = false;
+    private boolean mUniqueIdFound = false;
 
     private LocationManager mLocationManager;
     private LocationListener mLocationListeners;
@@ -59,8 +56,9 @@ public class GPSNodeService extends Service  {
         Log.e(TAG, "onCreate GPSService");
         new DataBaseSetUp().execute();
 
-        databaseIsSetUp = false;
-        uniqueIdFound = false;
+        //db not guaranteed to be set up when starting service.
+        mDatabaseIsSetUp = false;
+        mUniqueIdFound = false;
 
         mLocationManager = (LocationManager)
                 getApplicationContext().
@@ -68,9 +66,15 @@ public class GPSNodeService extends Service  {
 
         mLocationListeners = new MyLocationListener();
         mGeocoder = new Geocoder(this, Locale.getDefault());
-
     }
 
+    /**
+     * Set up location requests and get settings.
+     * @param intent
+     * @param flags
+     * @param startId
+     * @return
+     */
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         if(intent != null){
@@ -87,6 +91,9 @@ public class GPSNodeService extends Service  {
         return START_STICKY;
     }
 
+    /**
+     * Check if the user has allowed the app to track them.
+     */
     private void checkFineLocationPermission() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             Toast.makeText(this,
@@ -97,10 +104,18 @@ public class GPSNodeService extends Service  {
         }
     }
 
+    /**
+     * Listen for locations and add them to the database when found.
+     */
     private class MyLocationListener implements LocationListener{
+
+        /**
+         * Create the database entity object to store.
+         * @param location
+         */
         @Override
         public void onLocationChanged(Location location) {
-            if(location != null && uniqueIdFound) {
+            if(location != null && mUniqueIdFound) {
                 //Need to keep a standard date format to allow parsing.
                 @SuppressLint("SimpleDateFormat") SimpleDateFormat df =
                         new SimpleDateFormat(getString(R.string.dateFormat));
@@ -111,10 +126,6 @@ public class GPSNodeService extends Service  {
                         findAddressFromLocation(location));
 
                 new InsertIntoDatabase(node).execute();
-            } else {
-                Toast.makeText(GPSNodeService.this,
-                        "Tried storing node but was null.",
-                        Toast.LENGTH_LONG).show();
             }
         }
 
@@ -134,6 +145,11 @@ public class GPSNodeService extends Service  {
         }
     }
 
+    /**
+     * Find the closest address from the given location.
+     * @param location the location to find the address from.
+     * @return
+     */
     private String findAddressFromLocation(Location location) {
         try {
             List<Address> addresses = mGeocoder.getFromLocation(
@@ -149,54 +165,48 @@ public class GPSNodeService extends Service  {
         return "";
     }
 
-    @Override
-    public boolean stopService(Intent name) {
-
-        Toast.makeText(this, "Service stopped for some reason?", Toast.LENGTH_LONG).show();
-        return super.stopService(name);
-    }
-
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
         return null;
     }
 
+    /**
+     * When service is destroyed, remove updates from location manager.
+     */
     @Override
     public void onDestroy() {
         super.onDestroy();
         mLocationManager.removeUpdates(mLocationListeners);
     }
 
+    /**
+     * Thread to insert into database.
+     */
     private class InsertIntoDatabase extends AsyncTask<Void, Void, Void> {
         private NodeEntity entityToInsert;
         public InsertIntoDatabase(NodeEntity entityToInsert) {
             this.entityToInsert = entityToInsert;
         }
 
+        /**
+         * Insert to given node to the database.
+         * @param voids
+         * @return
+         */
         @Override
         protected Void doInBackground(Void... voids) {
-            if(databaseIsSetUp && mDataBase != null && uniqueIdFound) {
+            if(mDatabaseIsSetUp && mDataBase != null && mUniqueIdFound) {
                 mDataBase.nodeDao().insertAll(entityToInsert);
-            } else{
-                Toast.makeText(GPSNodeService.this,
-                        "Database not found. Could not insert.",
-                        Toast.LENGTH_LONG).show();
             }
             return null;
         }
+
 
         @Override
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
             Log.e(TAG, "onPostExecute InsertIntoDatabase");
-
-            Toast.makeText(GPSNodeService.this,
-                    "Stored location @ lat: "
-                            + entityToInsert.getLatitude()
-                            + ", long: "
-                            + entityToInsert.getLongitude(),
-                    Toast.LENGTH_LONG).show();
         }
     }
 
@@ -205,38 +215,21 @@ public class GPSNodeService extends Service  {
 
         @Override
         protected Void doInBackground(Void... voids) {
+            //set up database.
             mDataBase = Room.databaseBuilder(
                     getApplicationContext(),
                     NodeDB.class,
                     getString(R.string.database_name))
                     .build();
 
-            updateLastUsedDBID();
-
             return null;
         }
 
+        //Database is set up, set booleans to show it.
         @Override
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
-            databaseIsSetUp = true;
-            uniqueIdFound = true;
-        }
-
-        private void updateLastUsedDBID() {
-            ArrayList<NodeEntity> nodeEntities = (ArrayList<NodeEntity>) mDataBase.nodeDao().getAll();
-
-            boolean foundNewId = false;
-            while(!foundNewId){
-                foundNewId = true;
-                for (NodeEntity nodeEntity : nodeEntities) {
-                    if(nodeEntity.getId() == lastUsedID){
-                        lastUsedID++;
-                        foundNewId = false;
-                    }
-                }
-
-            }
+            mDatabaseIsSetUp = true;
         }
     }
 }
