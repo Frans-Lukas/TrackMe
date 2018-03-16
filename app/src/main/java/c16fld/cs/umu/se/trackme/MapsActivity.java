@@ -210,7 +210,9 @@ public class MapsActivity extends AppCompatActivity
         setCameraPosition();
     }
 
-
+    /**
+     * Set the camera position to the last known location or node.
+     */
     private void setCameraPosition() {
         if(mCameraPosition != null){
             mMap.moveCamera(CameraUpdateFactory.newCameraPosition(mCameraPosition));
@@ -262,6 +264,11 @@ public class MapsActivity extends AppCompatActivity
             super();
         }
 
+        /**
+         * Set up database, load and sort nodes.
+         * @param voids
+         * @return
+         */
         @Override
         protected Void doInBackground(Void... voids) {
             mNodeDatabase = Room.databaseBuilder(
@@ -277,6 +284,10 @@ public class MapsActivity extends AppCompatActivity
             return null;
         }
 
+        /**
+         * Draw trail and tell set database to being set up.
+         * @param aVoid
+         */
         @Override
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
@@ -334,7 +345,6 @@ public class MapsActivity extends AppCompatActivity
     protected void onResume() {
         super.onResume();
         loadPreferences();
-        setCameraPosition();
         new LoadNodes().execute();
     }
 
@@ -491,6 +501,7 @@ public class MapsActivity extends AppCompatActivity
                 }
             }
         }
+        //Update ui according to what the result  is.
         updateLocationUI();
     }
 

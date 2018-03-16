@@ -28,6 +28,7 @@ public class LocationInformationActivity extends AppCompatActivity {
         ActionBar ab = getSupportActionBar();
         ab.setDisplayHomeAsUpEnabled(true);
 
+        //Load node information.
         Intent intent = getIntent();
         time = intent.getStringExtra(MapsActivity.TIME_KEY);
         address = intent.getStringExtra(MapsActivity.ADDRESS_KEY);
