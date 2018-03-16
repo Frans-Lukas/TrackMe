@@ -21,15 +21,6 @@
         android:title="@string/settingsIntervalTitle"
         android:summary="@string/defaultIntervalSettingsValue"/>
 
-
-    <EditTextPreference
-        android:defaultValue="4"
-        android:key="edit_text_preference_circleRadiusKey"
-        android:selectAllOnFocus="true"
-        android:numeric="integer"
-        android:singleLine="true"
-        android:summary="4"
-        android:title="Circle radius" />
     <SwitchPreference
         android:defaultValue="true"
         android:key="@string/trackMeKey"
