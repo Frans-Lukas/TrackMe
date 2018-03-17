@@ -207,13 +207,13 @@ public class MapsActivity extends AppCompatActivity
         mMap = googleMap;
         updateLocationUI();
         getDeviceLocation();
-        setCameraPosition();
+        setMapsCameraPosition();
     }
 
     /**
      * Set the camera position to the last known location or node.
      */
-    private void setCameraPosition() {
+    private void setMapsCameraPosition() {
         if(mCameraPosition != null){
             mMap.moveCamera(CameraUpdateFactory.newCameraPosition(mCameraPosition));
         } else if(mDataBaseHasBeenSetUp
