@@ -387,78 +387,61 @@ public class MapsActivity extends AppCompatActivity
      * latLngs list.
      * @param latLngs The nodes to check if they are the distance between each other,
      */
-    private void getNodesToDraw(final ArrayList<LatLng> latLngs) {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                for (NodeEntity node : nodes) {
-                    LatLng newNode = new LatLng(node.getLatitude(), node.getLongitude());
-                    if (latLngs.size() > 0) {
-                        //don't add nodes that are close to each other.
-                        LatLng prevNode = latLngs.get(latLngs.size() - 1);
+    private void getNodesToDraw(ArrayList<LatLng> latLngs) {
+        for (NodeEntity node : nodes) {
+            LatLng newNode = new LatLng(node.getLatitude(), node.getLongitude());
+            if (latLngs.size() > 0) {
+                //don't add nodes that are close to each other.
+                LatLng prevNode = latLngs.get(latLngs.size() - 1);
 
-                        //Create location objects for easier distance checking.
-                        Location prevLocation = new Location(LocationManager.GPS_PROVIDER);
-                        prevLocation.setLatitude(prevNode.latitude);
-                        prevLocation.setLongitude(prevNode.longitude);
+                //Create location objects for easier distance checking.
+                Location prevLocation = new Location(LocationManager.GPS_PROVIDER);
+                prevLocation.setLatitude(prevNode.latitude);
+                prevLocation.setLongitude(prevNode.longitude);
 
-                        Location newLocation = new Location(LocationManager.GPS_PROVIDER);
-                        newLocation.setLatitude(newNode.latitude);
-                        newLocation.setLongitude(newNode.longitude);
+                Location newLocation = new Location(LocationManager.GPS_PROVIDER);
+                newLocation.setLatitude(newNode.latitude);
+                newLocation.setLongitude(newNode.longitude);
 
-                        if (newLocation.distanceTo(prevLocation) > mNodeDistance) {
-                            latLngs.add(newNode);
-                        }
-                    } else {
-                        latLngs.add(newNode);
-                    }
+                if (newLocation.distanceTo(prevLocation) > mNodeDistance) {
+                    latLngs.add(newNode);
                 }
+            } else {
+                latLngs.add(newNode);
             }
-        }).start();
-
+        }
     }
 
     /**
      * Draw circles on locations recorded.
      * @param latLngs
      */
-    private void drawCircles(final ArrayList<LatLng> latLngs) {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                if(latLngs.size() > 0) {
-                    for (LatLng latLng : latLngs) {
-                        circles.add(mMap.addCircle(new CircleOptions()
-                                .center(latLng)
-                                .radius(NODE_CIRCLE_RADIUS)
-                                .fillColor(Color.BLUE)
-                                .strokeColor(Color.BLUE)
-                                .clickable(true)));
+    private void drawCircles(ArrayList<LatLng> latLngs) {
+        if(latLngs.size() > 0) {
+            for (LatLng latLng : latLngs) {
+                circles.add(mMap.addCircle(new CircleOptions()
+                        .center(latLng)
+                        .radius(NODE_CIRCLE_RADIUS)
+                        .fillColor(Color.BLUE)
+                        .strokeColor(Color.BLUE)
+                        .clickable(true)));
 
-                    }
-                }
             }
-        }).start();
-
+        }
     }
 
     /**
      * clear all circles and lines drawn on map.
      */
     private void clearLinesAndCircles(){
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                for (Polyline polyline : polylines) {
-                    polyline.remove();
-                }
-                polylines = new ArrayList<>();
-                for (Circle circle : circles) {
-                    circle.remove();
-                }
-                circles = new ArrayList<>();
-            }
-        }).start();
+        for (Polyline polyline : polylines) {
+            polyline.remove();
+        }
+        polylines = new ArrayList<>();
+        for (Circle circle : circles) {
+            circle.remove();
+        }
+        circles = new ArrayList<>();
     }
 
 
@@ -469,38 +452,25 @@ public class MapsActivity extends AppCompatActivity
     private class MyCircleRemovalListener implements GoogleMap.OnMapLongClickListener{
 
         @Override
-        public void onMapLongClick(final LatLng latLng) {
+        public void onMapLongClick(LatLng latLng) {
             //Find the node the user clicked on, if it exists.
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    for (NodeEntity node : nodes) {
-                        float[] distance = new float[2];
-                        Location.distanceBetween(
-                                latLng.latitude,
-                                latLng.longitude,
-                                node.getLatitude(),
-                                node.getLongitude(),
-                                distance);
-                        //Remove the node if the user clicks on it.
-                        if(distance[0] < NODE_CIRCLE_RADIUS){
-                            new DeleteFromDatabase(node).execute();
-                            nodes.remove(node);
-                            clearLinesAndCircles();
-                            new LoadNodes().execute();
 
-                            //Tell the user the node was removed.
-                            Toast.makeText(
-                                    MapsActivity.this,
-                                    "Removed node",
-                                    Toast.LENGTH_SHORT).show();
+            for (NodeEntity node : nodes) {
+                float[] distance = new float[2];
+                Location.distanceBetween(latLng.latitude, latLng.longitude, node.getLatitude(), node.getLongitude(), distance);
+                //Remove the node if the user clicks on it.
+                if(distance[0] < NODE_CIRCLE_RADIUS){
+                    new DeleteFromDatabase(node).execute();
+                    nodes.remove(node);
+                    clearLinesAndCircles();
+                    new LoadNodes().execute();
 
-                            break;
-                        }
-                    }
+                    //Tell the user the node was removed.
+                    Toast.makeText(MapsActivity.this, "Removed node", Toast.LENGTH_SHORT).show();
+
+                    break;
                 }
-            }).start();
-
+            }
         }
     }
 
@@ -512,21 +482,18 @@ public class MapsActivity extends AppCompatActivity
         public void onCircleClick(final Circle circle) {
 
             //Find the circle the user clicked on.
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    for (NodeEntity node : nodes) {
-                        if(circle.getCenter().latitude == node.getLatitude() &&
-                                circle.getCenter().longitude == node.getLongitude()){
-                            Intent intent = new Intent(MapsActivity.this, LocationInformationActivity.class);
-                            intent.putExtra(ADDRESS_KEY, node.getAddress());
-                            intent.putExtra(TIME_KEY, node.getTime());
-                            startActivity(intent);
-                            break;
-                        }
-                    }
+            for (NodeEntity node : nodes) {
+                if(circle.getCenter().latitude == node.getLatitude() &&
+                        circle.getCenter().longitude == node.getLongitude()){
+                    Intent intent = new Intent(MapsActivity.this, LocationInformationActivity.class);
+                    intent.putExtra(ADDRESS_KEY, node.getAddress());
+                    intent.putExtra(TIME_KEY, node.getTime());
+                    startActivity(intent);
+                    break;
                 }
-            }).start();
+            }
+
+
 
         }
     }
