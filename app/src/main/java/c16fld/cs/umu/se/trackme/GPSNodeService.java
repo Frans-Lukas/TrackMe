@@ -48,6 +48,7 @@ public class GPSNodeService extends Service  {
     private LocationListener mLocationListeners;
     private NodeDB mDataBase;
     private Geocoder mGeocoder;
+    private boolean mDoesHavePermission = false;
 
     @Override
     public void onCreate() {
@@ -89,11 +90,15 @@ public class GPSNodeService extends Service  {
         Log.d(TAG, "Min distance between nodes: " + mMinDistance);
 
         checkFineLocationPermission();
-        mLocationManager.requestLocationUpdates(
-                LocationManager.GPS_PROVIDER,
-                mTrackTime,
-                mMinDistance,
-                mLocationListeners);
+        if(mDoesHavePermission) {
+            mLocationManager.requestLocationUpdates(
+                    LocationManager.GPS_PROVIDER,
+                    mTrackTime,
+                    mMinDistance,
+                    mLocationListeners);
+        } else{
+            stopSelf();
+        }
         return START_STICKY;
     }
 
@@ -101,12 +106,19 @@ public class GPSNodeService extends Service  {
      * Check if the user has allowed the app to track them.
      */
     private void checkFineLocationPermission() {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+        if (ActivityCompat.checkSelfPermission(getBaseContext(),
+                Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+
             Toast.makeText(this,
                     "Does not have permission to track. Stopping.",
                     Toast.LENGTH_SHORT).
                     show();
             stopSelf();
+
+            Log.e(TAG, "Does not have permission.");
+        } else{
+            mDoesHavePermission = true;
         }
     }
 
@@ -202,7 +214,7 @@ public class GPSNodeService extends Service  {
          */
         @Override
         protected Void doInBackground(Void... voids) {
-            if(mDatabaseIsSetUp && mDataBase != null && mUniqueIdFound) {
+            if(mDatabaseIsSetUp && mDataBase != null) {
                 mDataBase.nodeDao().insertAll(entityToInsert);
                 Log.d(TAG, "Inserted node into database");
             }

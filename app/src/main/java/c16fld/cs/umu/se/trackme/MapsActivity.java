@@ -111,8 +111,9 @@ public class MapsActivity extends AppCompatActivity
         //load nodes and set up database
         new DataBaseSetUp().execute();
 
+        checkFineLocationPermission();
         //If user has set to not be tracked, don't start service.
-        if(mShouldTrackUser) {
+        if(mShouldTrackUser && mLocationPermissionGranted) {
             startLocationService();
         }
     }
@@ -210,9 +211,11 @@ public class MapsActivity extends AppCompatActivity
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-        updateLocationUI();
-        getDeviceLocation();
-        setMapsCameraPosition();
+        if(mLocationPermissionGranted) {
+            updateLocationUI();
+            getDeviceLocation();
+            setMapsCameraPosition();
+        }
     }
 
     /**
@@ -255,11 +258,12 @@ public class MapsActivity extends AppCompatActivity
         if (ActivityCompat.checkSelfPermission(this,
                 Manifest.permission.ACCESS_FINE_LOCATION) !=
                 PackageManager.PERMISSION_GRANTED) {
-            mLocationPermissionGranted = true;
-        } else {
+
             ActivityCompat.requestPermissions(this,
                     new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION},
                     PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION);
+        } else {
+            mLocationPermissionGranted = true;
         }
     }
 
