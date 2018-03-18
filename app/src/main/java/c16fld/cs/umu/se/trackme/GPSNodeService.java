@@ -215,7 +215,9 @@ public class GPSNodeService extends Service  {
         }
     }
 
-
+    /**
+     * Start the database on a separate thread.
+     */
     private class DataBaseSetUp extends AsyncTask<Void, Void, Void> {
 
         @Override
