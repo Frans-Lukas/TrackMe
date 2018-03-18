@@ -43,7 +43,6 @@ public class GPSNodeService extends Service  {
     private int mMinDistance = MapsActivity.DEFAULT_NODE_DISTANCE;
 
     private boolean mDatabaseIsSetUp = false;
-    private boolean mUniqueIdFound = false;
 
     private LocationManager mLocationManager;
     private LocationListener mLocationListeners;
@@ -58,7 +57,6 @@ public class GPSNodeService extends Service  {
 
         //db not guaranteed to be set up when starting service.
         mDatabaseIsSetUp = false;
-        mUniqueIdFound = false;
 
         //Setup locationManager via gps.
         mLocationManager = (LocationManager)
@@ -86,6 +84,9 @@ public class GPSNodeService extends Service  {
             mTrackTime = intent.getIntExtra(getString(R.string.intervalKey), mTrackTime);
             mMinDistance = intent.getIntExtra(getString(R.string.minDistanceKey), mMinDistance);
         }
+
+        Log.d(TAG, "Tracking time: " + mTrackTime);
+        Log.d(TAG, "Min distance between nodes: " + mMinDistance);
 
         checkFineLocationPermission();
         mLocationManager.requestLocationUpdates(
@@ -120,7 +121,7 @@ public class GPSNodeService extends Service  {
          */
         @Override
         public void onLocationChanged(Location location) {
-            if(location != null && mUniqueIdFound) {
+            if(location != null) {
                 //Need to keep a standard date format to allow parsing.
                 @SuppressLint("SimpleDateFormat") SimpleDateFormat df =
                         new SimpleDateFormat(getString(R.string.dateFormat));
@@ -203,6 +204,7 @@ public class GPSNodeService extends Service  {
         protected Void doInBackground(Void... voids) {
             if(mDatabaseIsSetUp && mDataBase != null && mUniqueIdFound) {
                 mDataBase.nodeDao().insertAll(entityToInsert);
+                Log.d(TAG, "Inserted node into database");
             }
             return null;
         }

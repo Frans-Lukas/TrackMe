@@ -60,7 +60,7 @@ public class MapsActivity extends AppCompatActivity
 
     public static final String ADDRESS_KEY = "address";
     public static final String TIME_KEY = "time";
-    public static int DEFAULT_TRACK_INTERVAL = 10;
+    public static int DEFAULT_TRACK_INTERVAL = 5;
     public static int DEFAULT_NODE_DISTANCE = 100;
 
     private GoogleMap mMap;
@@ -70,7 +70,7 @@ public class MapsActivity extends AppCompatActivity
     private boolean mDataBaseHasBeenSetUp = false;
 
     private boolean mShouldTrackUser = false;
-    private int mTrackInterval = 10;
+    private int mTrackInterval = 0;
     private int mNodeDistance = 100;
 
     private NodeDB mNodeDatabase;
@@ -129,16 +129,21 @@ public class MapsActivity extends AppCompatActivity
         mShouldTrackUser = mSharedPref.getBoolean(
                 getString(R.string.trackMeKey),
                 false);
+        Log.d("loadPreferences", "mShouldTrackUser: " + mShouldTrackUser);
+
+        //Try loading track interval from settings
         try {
             mTrackInterval = Integer.parseInt(mSharedPref.getString(
                     getString(R.string.intervalKey),
-                    Integer.toString(mTrackInterval)))
-                    * mMinute;
+                    Integer.toString(mTrackInterval))) * mMinute;
+            Log.d("loadPreferences", "mTrackInterval: " + mTrackInterval);
         } catch (ClassCastException e){
             //Settings somehow set to non numeric value. Use defaults.
             mTrackInterval = DEFAULT_TRACK_INTERVAL * mMinute;
+            Log.e("loadPreferences","Failed to load tracking interval. " + e);
         }
 
+        //try loading node distance from settings.
         try{
             mNodeDistance = Integer.parseInt(mSharedPref.getString(
                     getString(R.string.minDistanceKey),
@@ -147,7 +152,7 @@ public class MapsActivity extends AppCompatActivity
         } catch (ClassCastException e){
             //Settings somehow set to non numeric value. Use defaults.
             mNodeDistance = DEFAULT_NODE_DISTANCE;
-            Log.e("MapsActivity","Failed to load node distance. " + e);
+            Log.e("loadPreferences","Failed to load node distance. " + e);
         }
     }
 
@@ -214,16 +219,18 @@ public class MapsActivity extends AppCompatActivity
      * Set the camera position to the last known location or node.
      */
     private void setMapsCameraPosition() {
-        if(mCameraPosition != null){
-            mMap.moveCamera(CameraUpdateFactory.newCameraPosition(mCameraPosition));
-        } else if(mDataBaseHasBeenSetUp
-                && nodes != null
-                && nodes.size() > 0){
-            //Set location to last recorded database location.
-            LatLng location = new LatLng(
-                    nodes.get(nodes.size() - 1).getLatitude(),
-                    nodes.get(nodes.size() - 1).getLongitude());
-            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(location, DEFAULT_ZOOM));
+        if(mMap != null) {
+            if (mCameraPosition != null) {
+                mMap.moveCamera(CameraUpdateFactory.newCameraPosition(mCameraPosition));
+            } else if (mDataBaseHasBeenSetUp
+                    && nodes != null
+                    && nodes.size() > 0) {
+                //Set location to last recorded database location.
+                LatLng location = new LatLng(
+                        nodes.get(nodes.size() - 1).getLatitude(),
+                        nodes.get(nodes.size() - 1).getLongitude());
+                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(location, DEFAULT_ZOOM));
+            }
         }
     }
 
@@ -294,6 +301,7 @@ public class MapsActivity extends AppCompatActivity
             //draw poly lines on map
             drawTrail();
             mDataBaseHasBeenSetUp = true;
+            setMapsCameraPosition();
         }
     }
 
