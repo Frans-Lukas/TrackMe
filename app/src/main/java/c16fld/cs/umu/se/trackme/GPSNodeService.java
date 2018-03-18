@@ -18,7 +18,6 @@ import android.os.IBinder;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
-import android.widget.Toast;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -98,6 +97,7 @@ public class GPSNodeService extends Service  {
                     mLocationListeners);
         } else{
             stopSelf();
+            return START_NOT_STICKY;
         }
         return START_STICKY;
     }
@@ -109,13 +109,7 @@ public class GPSNodeService extends Service  {
         if (ActivityCompat.checkSelfPermission(getBaseContext(),
                 Manifest.permission.ACCESS_FINE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED) {
-
-            Toast.makeText(this,
-                    "Does not have permission to track. Stopping.",
-                    Toast.LENGTH_SHORT).
-                    show();
             stopSelf();
-
             Log.e(TAG, "Does not have permission.");
         } else{
             mDoesHavePermission = true;

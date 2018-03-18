@@ -215,6 +215,7 @@ public class MapsActivity extends AppCompatActivity
             updateLocationUI();
             getDeviceLocation();
             setMapsCameraPosition();
+
         }
     }
 
@@ -533,7 +534,6 @@ public class MapsActivity extends AppCompatActivity
                 mMap.setMyLocationEnabled(false);
                 mMap.getUiSettings().setMyLocationButtonEnabled(false);
                 mLastKnownLocation = null;
-                checkFineLocationPermission();
             }
         } catch(SecurityException e){
             Log.e("Exception: %s", e.getMessage());
